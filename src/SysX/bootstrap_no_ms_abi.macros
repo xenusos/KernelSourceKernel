@@ -1,0 +1,77 @@
+
+ADD_FUNCTION_1(dbg, print);
+ADD_FUNCTION_1(dbg, panic);
+ADD_FUNCTION_12(dbg, test_function);
+
+
+ADD_FUNCTION_1(memory, execalloc);
+ADD_FUNCTION_1(memory, execfree);
+ADD_FUNCTION_2(memory, kmalloc);
+ADD_FUNCTION_2(memory, vmalloc);
+ADD_FUNCTION_1(memory, kfree);
+ADD_FUNCTION_1(memory, vfree);
+ADD_FUNCTION_1(memory, ksize);
+ADD_FUNCTION_3(memory, memcpy);
+ADD_FUNCTION_3(memory, memset);
+ADD_FUNCTION_3(memory, memmove);
+ADD_FUNCTION_3(memory, memcmp);
+ADD_FUNCTION_6(memory, memscan);
+
+
+ADD_FUNCTION_12(string, strcasecmp);
+ADD_FUNCTION_12(string, strncasecmp);
+ADD_FUNCTION_12(string, strncpy);
+ADD_FUNCTION_12(string, strlcpy);
+ADD_FUNCTION_12(string, strcat);
+ADD_FUNCTION_12(string, strncat);
+ADD_FUNCTION_12(string, strlcat);
+ADD_FUNCTION_12(string, strcmp);
+ADD_FUNCTION_12(string, strncmp);
+ADD_FUNCTION_12(string, strchr);
+ADD_FUNCTION_12(string, strrchr);
+ADD_FUNCTION_12(string, strnchr);
+ADD_FUNCTION_12(string, skip_spaces);
+ADD_FUNCTION_12(string, strim);
+ADD_FUNCTION_12(string, strlen);
+ADD_FUNCTION_12(string, strnlen);
+ADD_FUNCTION_12(string, strspn);
+ADD_FUNCTION_12(string, strcspn);
+ADD_FUNCTION_12(string, strpbrk);
+ADD_FUNCTION_12(string, strsep);
+ADD_FUNCTION_12(string, sysfs_streq);
+ADD_FUNCTION_12(string, strtobool);
+ADD_FUNCTION_12(string, strstr);
+ADD_FUNCTION_12(string, strnstr);
+ADD_FUNCTION_12(string, strcpy);
+
+ADD_FUNCTION_12(mutex, mutex_init);
+ADD_FUNCTION_12(mutex, mutex_lock);
+ADD_FUNCTION_12(mutex, mutex_trylock);
+ADD_FUNCTION_12(mutex, mutex_unlock);
+ADD_FUNCTION_12(mutex, mutex_destroy);
+ADD_FUNCTION_12(mutex, mutex_is_locked);
+
+ADD_FUNCTION_1(cpu, kernel_fpu_begin);
+ADD_FUNCTION_1(cpu, kernel_fpu_end);
+ADD_FUNCTION_1(cpu, create_thread_unsafe);
+ADD_FUNCTION_1(cpu, get_current_pid);
+ADD_FUNCTION_1(cpu, _current);
+ADD_FUNCTION_1(cpu, tls);
+ADD_FUNCTION_1(cpu, preempt_enable);
+ADD_FUNCTION_1(cpu, preempt_disable);
+
+
+
+ADD_FUNCTION_12(fio, file_open);
+ADD_FUNCTION_12(fio, file_open_readonly);
+ADD_FUNCTION_12(fio, file_open_readwrite);
+ADD_FUNCTION_12(fio, file_open_append);
+ADD_FUNCTION_12(fio, file_read);
+ADD_FUNCTION_12(fio, file_write);
+ADD_FUNCTION_12(fio, file_mode);
+ADD_FUNCTION_12(fio, file_length);
+ADD_FUNCTION_12(fio, file_mt);
+ADD_FUNCTION_12(fio, file_ct);
+ADD_FUNCTION_12(fio, file_at);
+ADD_FUNCTION_12(fio, file_sync);
+ADD_FUNCTION_12(fio, file_close); 

@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\core_exports.c" />
+    <ClCompile Include="src\core_init.c" />
+    <ClCompile Include="src\LibX\tinyprintf.c" />
+    <ClCompile Include="src\LibX\xenus_chain.c" />
+    <ClCompile Include="src\LibX\xenus_dynbuffer.c" />
+    <ClCompile Include="src\LibX\xenus_dynbuffer_ts.c" />
+    <ClCompile Include="src\LibX\xenus_threading_generic.c" />
+    <ClCompile Include="src\LibX\_xenus_libx.c" />
+    <ClCompile Include="src\LibX\xenus_list_dyn_ts.c" />
+    <ClCompile Include="src\LibX\xenus_list_dyn.c" />
+    <ClCompile Include="src\LibX\xenus_list_linked.c" />
+    <ClCompile Include="src\LibX\xenus_memory.c" />
+    <ClCompile Include="src\LibX\xenus_strings.c" />
+    <ClCompile Include="src\LibX\xenus_threading_tls.c" />
+    <ClCompile Include="src\PE\pe_checker.c" />
+    <ClCompile Include="src\portable_structs.c" />
+    <ClCompile Include="src\SysX\sys_strings.c" />
+    <ClCompile Include="src\startpoint.c" />
+    <ClCompile Include="src\SysX\sys_main.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\access_sys.h" />
+    <ClInclude Include="src\g_functions.h" />
+    <ClInclude Include="src\core_exports.h" />
+    <ClInclude Include="src\core_init.h" />
+    <ClInclude Include="src\cstring\cstring.h" />
+    <ClInclude Include="src\LibX\tinyprintf.h" />
+    <ClInclude Include="src\LibX\_xenus_threads.h" />
+    <ClInclude Include="src\LibX\_xenus_libx.h" />
+    <ClInclude Include="src\PE\pe_headers.h" />
+    <ClInclude Include="src\PE\pe_checker.h" />
+    <ClInclude Include="src\PE\pe_loader.h" />
+    <ClInclude Include="src\SysX\sys_main.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="src\SysX\linux_caller.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\SysX\bootstrap_no_ms_abi.macros" />
+    <None Include="src\SysX\sys_functions_all.macros" />
+    <None Include="src\SysX\sys_functions_sched.macros" />
+    <None Include="src\SysX\sys_functions_timer_delay.macros" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6731A7E7-0455-426E-94C3-4D69458EB721}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Xenus Kernel</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>garbage\$(Configuration)\</IntDir>
+    <OutDir>..\Build</OutDir>
+    <TargetExt>.xdll</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>garbage\$(Configuration)\</IntDir>
+    <OutDir>..\Build</OutDir>
+    <TargetExt>.xdll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);KERNEL;XENUS_BUILD</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../CommonKernel/headers;../CommonKernel/src</AdditionalIncludeDirectories>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CompileAs>CompileAsC</CompileAs>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <EntryPointSymbol>StartPoint</EntryPointSymbol>
+      <ImportLibrary>..\DynamicLinking\$(TargetName).lib</ImportLibrary>
+      <ForceFileOutput>
+      </ForceFileOutput>
+      <ProgramDatabaseFile>$(OutDir)_$(TargetName).pdb</ProgramDatabaseFile>
+      <MapFileName>map</MapFileName>
+      <GenerateMapFile>false</GenerateMapFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;;%(PreprocessorDefinitions);KERNEL;KERNEL</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../CommonKernel/headers;../CommonKernel/src</AdditionalIncludeDirectories>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CompileAs>CompileAsC</CompileAs>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+      <EntryPointSymbol>StartPoint</EntryPointSymbol>
+      <ImportLibrary>..\DynamicLinking\$(TargetName).lib</ImportLibrary>
+      <NoEntryPoint>false</NoEntryPoint>
+      <ForceFileOutput>
+      </ForceFileOutput>
+      <ProgramDatabaseFile>$(OutDir)_$(TargetName).pdb</ProgramDatabaseFile>
+      <MapFileName>map</MapFileName>
+      <GenerateMapFile>false</GenerateMapFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  </ImportGroup>
+</Project>
