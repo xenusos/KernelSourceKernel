@@ -1,3 +1,0 @@
-ADD_FUNCTION_UNOPTIMIZED(wake_up_state)		
-ADD_FUNCTION_UNOPTIMIZED(wake_up_process)	
-ADD_FUNCTION_UNOPTIMIZED(wake_up_new_task)

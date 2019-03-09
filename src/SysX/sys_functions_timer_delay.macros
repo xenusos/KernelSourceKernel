@@ -1,3 +1,0 @@
-ADD_FUNCTION_1(msleep)
-ADD_FUNCTION_1(msleep_interruptible)
-ADD_FUNCTION_2(usleep_range)

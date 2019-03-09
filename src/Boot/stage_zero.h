@@ -4,6 +4,5 @@
     License: All Rights Reserved J. Reece Wilson
 */  
 #pragma once
-#include <kernel/peloader/pe_loader.h>
 
-error_t pe_loader_init();
+START_POINT(stage_zero);

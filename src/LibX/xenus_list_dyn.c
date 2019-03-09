@@ -5,45 +5,60 @@
 */
 
 #include <xenus.h>
-#include <libx/xenus_list_dyn.h>
-#include <libx/xenus_memory.h> 
-#include "../access_sys.h"
+#include <kernel/libx/xenus_list_dyn.h>
+#include <kernel/libx/xenus_memory.h> 
+#include "../Boot/access_system.h"
 
-#define DYN_LIST_HASH 0x45018413
+#ifndef NO_LIBX_SAFETY
+    #define CHK_LIST                                   \
+        if (!head)                                     \
+            return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;   \
+                                                       \
+        if (head->hash != XENUS_HASHCODE_LIST_DYN)     \
+            return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    
+#else
+    #define CHK_LIST
+#endif 
 
 XENUS_EXPORT dyn_list_head_p _dyn_list_create(size_t length)
 {
     dyn_list_head_p head;
 
-    head = (dyn_list_head_p) malloc(sizeof(dyn_list_head_t));
+#ifndef NO_LIBX_SAFETY
+    if (!length)
+        return 0;
+#endif 
+
+    head = (dyn_list_head_p) calloc(1, sizeof(dyn_list_head_t));
     
     if (!head)
         return (dyn_list_head_p)0;
 
-    memset(head, 0, sizeof(dyn_list_head_t));
-
-	head->hash = DYN_LIST_HASH;
+    head->hash = XENUS_HASHCODE_LIST_DYN;
     head->item_sizeof = length;
+
     return head;
 }
 
 XENUS_EXPORT error_t dyn_list_entries(dyn_list_head_p head, size_t * out_size)
 {
-    if (!head)
-        return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
-	if (head->hash != DYN_LIST_HASH)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    CHK_LIST;
     *out_size = head->entries;
     return XENUS_OKAY;
 }
 
+
 XENUS_EXPORT error_t dyn_list_append(dyn_list_head_p head, void ** out)
 {
-	if (!head)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    return dyn_list_append_ex(head, out, NULL);
+}
 
-	if (head->hash != DYN_LIST_HASH)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+XENUS_EXPORT error_t dyn_list_append_ex(dyn_list_head_p head, void ** out, size_t * idx)           // O(1)
+{
+    CHK_LIST;
+
+    size_t index;
 
     if (head->entries + 1 > head->item_slots)
     {
@@ -53,7 +68,7 @@ XENUS_EXPORT error_t dyn_list_append(dyn_list_head_p head, void ** out)
         if (head->buffer)
         {
             void * temp;
-            temp = realloc(head->buffer, len * head->item_sizeof);
+            temp = realloc_zero(head->buffer, len * head->item_sizeof);
 
             if (!temp)
                 return XENUS_ERROR_LIST_FAILED_TO_RESIZE_BUFFER;
@@ -61,76 +76,77 @@ XENUS_EXPORT error_t dyn_list_append(dyn_list_head_p head, void ** out)
             head->buffer = temp;
         }
         else
-            if (!(head->buffer = malloc(len * head->item_sizeof)))
+        {
+            if (!(head->buffer = calloc(len, head->item_sizeof)))
+            {
                 return XENUS_ERROR_LIST_FAILED_TO_ALLOC_BUFFER;
+            }
+        }
 
         head->item_slots = len;
     }
 
-    head->entries++;
+    index = head->entries++;
 
-    *out = (void *)(((uint8_t *)head->buffer) + ((head->entries - 1) * head->item_sizeof));
-
+    if (out)
+        *out = (void *)(((uint8_t *)head->buffer) + (index * head->item_sizeof));
+    
+    if (idx)
+        *idx = index;
     return XENUS_OKAY;
 }
 
 XENUS_EXPORT error_t dyn_list_get_by_index(dyn_list_head_p head, size_t index, void ** entry)
 {
-	if (!head)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    CHK_LIST;
 
-	if (head->hash != DYN_LIST_HASH)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    if (!head->buffer)
+        return XENUS_ERROR_LIST_NO_BUFFER;
 
-	if (!head->buffer)
-		return XENUS_ERROR_LIST_NO_BUFFER;
+    if (index > head->entries)
+        return XENUS_ERROR_LIST_INDEX_OUT_BOUNDS;
 
-	if (index > head->entries)
-		return XENUS_ERROR_LIST_INDEX_OUT_BOUNDS;
-
-	*entry = (void *)(((uint8_t *)head->buffer) + (index * head->item_sizeof));
-	return XENUS_OKAY;
+    if (entry)
+        *entry = (void *)(((uint8_t *)head->buffer) + (index * head->item_sizeof));
+    
+    return XENUS_OKAY;
 }
 
 XENUS_EXPORT error_t dyn_list_get_by_buffer(dyn_list_head_p head, void * entry, size_t * index)
 {
-	size_t item_size;
-	size_t cnt;
-	size_t i;
+    CHK_LIST;
 
-	if (!head)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    size_t item_size;
+    size_t cnt;
+    size_t i;
 
-	if (head->hash != DYN_LIST_HASH)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+#ifndef NO_LIBX_SAFETY
+    if (!entry)
+        return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+#endif 
 
-	if (!head->buffer)
-		return XENUS_ERROR_LIST_NO_BUFFER;
+    cnt = head->entries;
+    item_size = head->item_sizeof;
 
-	cnt = head->entries;
-	item_size = head->item_sizeof;
-	for (i = 0; i < cnt; i++)
-	{
-		void * lst = (void *)(((uint8_t *)head->buffer) + (i * item_size));
+    for (i = 0; i < cnt; i++)
+    {
+        void * lst = (void *)(((uint8_t *)head->buffer) + (i * item_size));
 
-		if (memcmp(lst, entry, item_size) == 0)
-		{
-			if (index)
-				*index = i;
-			return XENUS_STATUS_LISTS_FOUND;
-		}
-	}
+        if (memcmp(lst, entry, item_size) == 0)
+        {
+            if (index)
+                *index = i;
 
-	return XENUS_STATUS_LISTS_NOT_FOUND;
+            return XENUS_STATUS_LISTS_FOUND;
+        }
+    }
+
+    return XENUS_STATUS_LISTS_NOT_FOUND;
 }
 
 XENUS_EXPORT error_t dyn_list_slice(dyn_list_head_p head, size_t index, size_t cnt)
 {
-    if (!head)
-        return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
-
-	if (head->hash != DYN_LIST_HASH)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    CHK_LIST;
 
     if (!head->buffer)
         return XENUS_ERROR_LIST_NO_BUFFER;
@@ -149,19 +165,20 @@ XENUS_EXPORT error_t dyn_list_slice(dyn_list_head_p head, size_t index, size_t c
 
 XENUS_EXPORT error_t dyn_list_splice(dyn_list_head_p head, size_t index, void ** new_entity)
 {
+    CHK_LIST;
+
     void * item;
 
-    if (!head)
+#ifndef NO_LIBX_SAFETY
+    if (!new_entity)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
-
-	if (head->hash != DYN_LIST_HASH)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+#endif 
 
     if (!head->buffer)
         return XENUS_ERROR_LIST_NO_BUFFER;
 
     if (index >= head->item_slots)
-        return 0;
+        return XENUS_ERROR_OUT_OF_RANGE;
 
     if (head->entries + 1 > head->item_slots)
     {
@@ -201,15 +218,61 @@ XENUS_EXPORT error_t dyn_list_remove(dyn_list_head_p head, size_t index)
 
 XENUS_EXPORT error_t dyn_list_destory(dyn_list_head_p head)
 {
-    if (!head)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
-
-	if (head->hash != DYN_LIST_HASH)
-		return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+    CHK_LIST;
     
     if (head->buffer)
         free(head->buffer);
     
     free(head);
+    return XENUS_OKAY;
+}
+
+XENUS_EXPORT error_t dyn_list_iterate(dyn_list_head_p head, void(*iterator)(void * buffer, void * ctx), void * ctx)
+{
+    CHK_LIST;
+
+#ifndef NO_LIBX_SAFETY
+    if (!iterator)
+        return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+#endif
+
+    if (!head->buffer)
+        return XENUS_ERROR_LIST_NO_BUFFER;
+
+    for (size_t i = 0; i < head->entries; i++)
+        iterator((void *)(((uint8_t *)head->buffer) + (i * head->item_sizeof)), ctx);
+
+    return XENUS_OKAY;
+}
+
+XENUS_EXPORT error_t dyn_list_reset(dyn_list_head_p head)
+{
+    CHK_LIST;
+
+    if (!head->buffer)
+        return XENUS_ERROR_LIST_NO_BUFFER;
+
+    head->entries = 0;
+
+    return XENUS_OKAY;
+}
+
+XENUS_EXPORT error_t dyn_list_rebuffer(dyn_list_head_p head)
+{
+    CHK_LIST;
+
+    void * nbuf;
+    size_t len;
+
+    if (!head->buffer)
+        return XENUS_ERROR_LIST_NO_BUFFER;
+
+    len = head->item_slots + LISTS_MIN_APPEND_SIZE;
+
+    if (!(nbuf = realloc_zero(head->buffer, len)))
+        return XENUS_ERROR_OUT_OF_MEMORY;
+
+    head->buffer = nbuf;
+
     return XENUS_OKAY;
 }

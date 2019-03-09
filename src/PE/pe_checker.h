@@ -8,4 +8,4 @@
 
 // Warning: this will not check in-memory PE images.
 // Buffer must equal a buffered PE file 
-error_t pe_loader_check(void * buffer, size_t min_dir_level, size_t length);
+error_t pe_loader_check(void * buffer, size_t length, size_t min_dir_level);

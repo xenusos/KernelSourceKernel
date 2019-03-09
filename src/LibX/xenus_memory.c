@@ -4,191 +4,275 @@
     License: All Rights Reserved J. Reece Wilson
 */  
 #include <xenus.h>
-#include <libx/xenus_memory.h>
-#include "../core_exports.h"
-#include <libx/xenus_memory.h> 
-#include <_/_xenus_linux_types_memory.h>
-#include "../access_sys.h"
+#include <kernel/libx/xenus_memory.h> 
+#include "../Boot/access_system.h"
 
-#define ALLOCATOR_MAGIC 0x33221155
+static size_t kernel_memusage = 0;
+static uint32_t mem_atomic = 0;
+
+#define ALLOCATOR_MAGIC                       XENUS_HASHCODE_ALLOCATOR
+#define ALLOCATOR_PADDING                     (sizeof(allocator_header_t) + 16) 
+#define ALLOCATOR_GET_LINUX_BUFFER(header)    (void *)(((size_t)header) - header->base_buf_offset)
+
+enum allocation_type_e
+{
+    XENUS_INVALID_ALLOCATOR = 0,
+    XENUS_ALLOCATOR_KMALLOC,
+    XENUS_ALLOCATOR_VMALLOC
+};
 
 #pragma pack(push, 1)
 typedef struct allocator_header_s
 {
-	uint32_t allocator_magic;
-	size_t actual_length;
-	size_t request_length;
-	//void * base_buf;
-	uint8_t base_buf_offset;
-	uint8_t type;
+    uint32_t allocator_magic;
+    size_t actual_length;
+    size_t request_length;
+    //void * base_buf; - deprecated, use ALLOCATOR_GET_LINUX_BUFFER.
+    uint8_t base_buf_offset;
+    uint8_t type;
 } *allocator_header_p, allocator_header_t;
 #pragma pack(pop)
 
-#define ALLOCATOR_PADDING (16 + sizeof(allocator_header_t)) 
+
+#ifdef NO_LIBX_SAFETY
+#define GET_AND_CHK_HEADER_xx(p, error_one, error_two)                               \
+    allocator_header_p header;                                                       \
+    header = (allocator_header_p)(((size_t)p) - sizeof(allocator_header_t));         
+#else
+#define GET_AND_CHK_HEADER_xx(p, error_one, error_two)                               \
+    allocator_header_p header;                                                       \
+                                                                                     \
+    if (!p)                                                                          \
+        return error_one;                                                            \
+                                                                                     \
+    header = (allocator_header_p)(((size_t)p) - sizeof(allocator_header_t));         \
+                                                                                     \
+    if (header->allocator_magic != ALLOCATOR_MAGIC)                                  \
+        return error_two;
+#endif
+
+static void * _realloc(void * buf, size_t length, bool zero);
+
+static void _linux_free(void * buffer, int type)
+{
+    switch (type)
+    {
+    case XENUS_ALLOCATOR_KMALLOC:
+        kfree(buffer);
+        break;
+    case XENUS_ALLOCATOR_VMALLOC:
+        vfree(buffer);
+        break;
+    case 0:
+    default:
+        panic("_linux_free called with an illegal type!");
+    }
+}
+
+static bool _linux_alloc(bool atomic, size_t length, void ** out, size_t * actual_length, int * type)
+{
+    void * buffer;
+
+    if (length >= 4096) 
+        goto alt_alloc;
+
+    buffer = kmalloc(length, ((atomic || mem_atomic) ? GFP_ATOMIC : 0) | GFP_KERNEL);
+
+    if (buffer)
+    {
+        *actual_length = ksize(buffer);
+        *type = XENUS_ALLOCATOR_KMALLOC;
+        goto out;
+    }
+
+alt_alloc:
+    ASSERT(!atomic, "can't allocate virtually contiguous buffer in an atomic environment");
+    if (mem_atomic)
+    {
+        puts("warning xenus kernel: allocating a virtually contiguous buffer - disregarding global atomicity");
+    }
+    buffer = vmalloc(length);
+    *actual_length = length;
+    *type = XENUS_ALLOCATOR_VMALLOC;
+
+out:
+    *out = buffer;
+    return buffer != 0;
+}
+
+XENUS_EXPORT size_t alloc_get_kernel_usage()
+{
+    return kernel_memusage;
+}
+
+XENUS_EXPORT void * malloc_common(size_t length, bool atomic)
+{
+    int type;
+    void * buf;
+    size_t act_len;
+    void * user_buf;
+    allocator_header_p header;
+
+    if (!_linux_alloc(atomic, length + ALLOCATOR_PADDING, &buf, &act_len, &type))
+        return 0;
+
+    user_buf    = (void *)((((size_t)buf) + ALLOCATOR_PADDING - 1) & ~(16 - 1));          // find allocated buffer after padding and the header that we want to prepend
+    header      = (allocator_header_p)(((size_t)user_buf) - sizeof(allocator_header_t));  // subtract header size from the allocated buffer ptr 
+
+
+#ifndef NO_LIBX_SAFETY
+    if (((size_t)user_buf) + length > ((size_t)buf) + act_len)
+        panic("Malloc Math Error: integer overflow issue - out of bounds! \n");
+
+    if (((size_t)header) < ((size_t)buf))
+        panic("Malloc Math Error: integer underflow/overflow issue in header calculation! \n");
+#endif
+
+    header->base_buf_offset  = (uint8_t)(((size_t)header) - ((size_t)buf));
+    header->actual_length    = act_len;
+    header->request_length   = length;
+    header->type             = type;
+    header->allocator_magic  = ALLOCATOR_MAGIC;
+
+    kernel_memusage += act_len;
+
+    return user_buf;
+}
+
+XENUS_EXPORT void * malloc_atomic(size_t length)
+{
+    return malloc_common(length, true);
+}
 
 XENUS_EXPORT void * malloc(size_t length)
 {
-
-	size_t buf_len;             // length with header and padding space 
-	size_t act_len;             // vm/kalloc padded "buf_len" length (typically is equal to buf_len + padding = aligned with page size) 
-	void * buf;                 // real virtual address and allocated length
-	int type;		            // allocator type (vmalloc or kalloc)
-	void * user_buf;            // 16-byte aligned address that is provided to the caller (user_buf - sizeof(header) = header)
-	allocator_header_p header;  // header
-
-	buf_len = length + ALLOCATOR_PADDING;
-
-	if (buf_len >= 4096) goto alt_alloc; // "kmalloc is the normal method of allocating memory for objects smaller than page size in the kernel. "
-										 // if we're requesting a page or more, let's use virtually contiguous memory, rather than taking up all the physically contiguous memory at the cost of the iommu remapping performance hit.
-	buf = kmalloc(buf_len, GFP_KERNEL);
-
-	if (buf)
-	{
-		act_len = ksize(buf);
-		type = 1;
-		goto succ;
-	}
-
-	alt_alloc:
-
-	buf = vmalloc(buf_len);
-	act_len = buf_len; //TODO: this is slow. why would you even realloc a vmalloc'd buffer? didn't you get enough the first time? ffs
-	type = 2;
-
-	if (!buf)
-		return 0;
-
-succ:
-	{
-		user_buf = (void *)((((size_t)buf) + ALLOCATOR_PADDING - 1) & ~(16 - 1));		// find allocated buffer after padding and the header that we want to prepend
-		header = (allocator_header_p)(((size_t)user_buf) - sizeof(allocator_header_t));	// subtract header size from the allocated buffer ptr 
-
-		//header->base_buf = buf;
-		header->base_buf_offset = (uint8_t)(((size_t)header) - ((size_t)buf));
-		header->actual_length = act_len;
-		header->request_length = length;
-		header->type = type;
-		header->allocator_magic = ALLOCATOR_MAGIC;
-
-		return user_buf;
-	}
+    return malloc_common(length, false);
 }
 
-XENUS_EXPORT void free(void * s)
+XENUS_EXPORT void alloc_increment_atomicity()
 {
-	allocator_header_p header;
-	void * base_buffer;
-
-	if (!s) return;
-
-	header = (allocator_header_p)(((size_t)s) - sizeof(allocator_header_t));
-
-	if (header->allocator_magic != ALLOCATOR_MAGIC)
-		panicf("free called with an illegal header magic!");
-
-	base_buffer = (void *)(((size_t)header) - header->base_buf_offset);
-
-	switch (header->type)
-	{
-	case 1:
-		kfree(base_buffer);
-		break;
-	case 2:
-		vfree(base_buffer);
-		break;
-	case 0:
-	default:
-		panicf("free called with an illegal header!");
-	}
-
-	return;
+    mem_atomic++;
 }
 
-XENUS_EXPORT void alloc_dbg_info(void * s)
+XENUS_EXPORT void alloc_decrement_atomicity()
 {
-	allocator_header_p header;
-	void * base_buffer;
-
-	if (!s)
-	{
-		printf("Illegal buffer (null) provided to alloc_dbg_info\n");
-		return;
-	}
-
-	header = ((allocator_header_p)(((size_t)s) - sizeof(allocator_header_t)));
-
-	if (header->allocator_magic != ALLOCATOR_MAGIC)
-	{
-		printf("Illegal buffer (magic) provided to alloc_dbg_info\n");
-		return;
-	}
-
-	base_buffer = (void *)(((size_t)header) - header->base_buf_offset);
-
-	printf("------------ BUFFER INFO ------------ \n"
-		" Header                      : 0x%p   \n"
-		" Base Buffer                 : 0x%p   \n"
-		" Base Virt (usr) Buffer      : 0x%p   \n"
-		" Type                        : %c    \n"
-		" Actual Length               : %zi    \n"
-		" Requested Length            : %zi    \n"
-		" Post Virt Buffer Padding    : %zi    \n"
-		" Pre header Padding          : %zi    \n"
-		" Header Length               : %zi    \n"
-		"------------ BUFFER INFO ------------ \n",
-			header,
-			base_buffer,
-			s,
-			(uint64_t)header->type,
-			header->actual_length,
-			header->request_length,
-			header->actual_length - ALLOCATOR_PADDING - header->request_length,
-			((size_t)s) - ((size_t)base_buffer) - sizeof(allocator_header_t),
-			sizeof(allocator_header_t));
+    ASSERT(mem_atomic != 0, "can not decrement kernel mem atomic atomicity - counter is zero");
+    mem_atomic--;
 }
 
-
-XENUS_EXPORT size_t alloc_actual_size(void * s)
+XENUS_EXPORT uint32_t alloc_get_atomicity()
 {
-	allocator_header_p header;
-	if (!s) return 0;
-	header = (allocator_header_p)(((size_t)s) - sizeof(allocator_header_t));
-	if (header->allocator_magic != ALLOCATOR_MAGIC) return 0;
-	return header->actual_length;
+    return mem_atomic;
 }
 
-XENUS_EXPORT size_t alloc_requested_size(void * s)
+XENUS_EXPORT void free(void * ptr)
 {
-	allocator_header_p header;
-	if (!s) return 0;
-	header = (allocator_header_p)(((size_t)s) - sizeof(allocator_header_t));
-	if (header->allocator_magic != ALLOCATOR_MAGIC) return 0;
-	return header->request_length;
+    GET_AND_CHK_HEADER_xx(ptr,,)
+
+    kernel_memusage -= header->actual_length;
+    _linux_free(ALLOCATOR_GET_LINUX_BUFFER(header), header->type);
+}
+
+XENUS_EXPORT void alloc_dbg_info(void * ptr)
+{
+    void * base_buffer;
+    GET_AND_CHK_HEADER_xx(ptr,,)
+
+    base_buffer = ALLOCATOR_GET_LINUX_BUFFER(header);
+
+    printf("------------ BUFFER INFO ------------ \n"
+           " Header                      : 0x%p   \n"
+           " Base Buffer                 : 0x%p   \n"
+           " Base Virt (usr) Buffer      : 0x%p   \n"
+           " Type                        : %zi     \n"
+           " Actual Length               : %zi    \n"
+           " Requested Length            : %zi    \n"
+           " Post Virt Buffer Padding    : %zi    \n"
+           " Pre header Padding          : %zi    \n"
+           " Header Length               : %zi    \n"
+           "------------ BUFFER INFO ------------ \n",
+                header,
+                base_buffer,
+                ptr,
+                (uint64_t)header->type,
+                header->actual_length,
+                header->request_length,
+                header->actual_length - ALLOCATOR_PADDING - header->request_length,
+                ((size_t)ptr) - ((size_t)base_buffer) - sizeof(allocator_header_t),
+                sizeof(allocator_header_t));
+}
+
+XENUS_EXPORT size_t alloc_actual_size(void * ptr)
+{
+    GET_AND_CHK_HEADER_xx(ptr, 0, 0)
+    return header->actual_length;
+}
+
+XENUS_EXPORT size_t alloc_requested_size(void * ptr)
+{
+    GET_AND_CHK_HEADER_xx(ptr, 0, 0)
+    return header->request_length;
 }
 
 XENUS_EXPORT void * calloc(size_t num, size_t size)
 {
-	return malloc(num * size);
+    return zalloc(num * size);
+}
+
+XENUS_EXPORT void * calloc_nozero(size_t num, size_t size)
+{
+    return malloc(num * size);
+}
+
+XENUS_EXPORT void * zalloc(size_t size)
+{
+    void * ret;
+    
+    ret = malloc(size);
+    
+    if (!ret)
+        return NULL;
+    
+    return memset(ret, 0, size);
 }
 
 XENUS_EXPORT void * realloc(void * buf, size_t length)
 {
-	size_t size;
-	void * new;
+    return _realloc(buf, length, false);
+}
 
-	if (!buf)
-		return malloc(length);
+XENUS_EXPORT void * realloc_zero(void * buf, size_t length)
+{
+    return _realloc(buf, length, true);
+}
 
-	if (!(size = alloc_requested_size(buf)))
-		return malloc(length);
+static void * _realloc(void * buf, size_t length, bool zero)
+{
+    size_t oldLength;
+    void * new;
 
-	new = malloc(length);
+    if (!buf)
+        return malloc(length);
 
-	if (!new)
-		return 0;
+    GET_AND_CHK_HEADER_xx(buf, NULL, NULL)
 
-	memcpy(new, buf, size);
-	free(buf);
+    if (!(oldLength = header->request_length))
+    {
+        free(buf);
+        return malloc(length);
+    }
 
-	return new;
+    new = malloc(length);
+
+    if (!new)
+        return 0;
+
+    memcpy(new, buf, oldLength);
+
+    if (zero)
+        memset((void *)((size_t)new + oldLength), 0, length - oldLength);
+
+    free(buf);
+
+    return new;
 }

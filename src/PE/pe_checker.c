@@ -4,11 +4,9 @@
     License: All Rights Reserved J. Reece Wilson
 */  
 #include <xenus.h>
-
-#include "pe_headers.h"
 #include "pe_checker.h"
-
-#include "../access_sys.h"
+#include "../Boot/access_system.h"
+#include <kernel/peloader/pe_fmt.h>
 
 error_t pe_loader_check_dos(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader)
 {
@@ -54,17 +52,19 @@ error_t pe_loader_virt_to_address(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheade
 {
     error_t ret;
     size_t offset;
-	
+    
     if ((ret = pe_loader_virt_to_offset(ntheader, virt, &offset)) != XENUS_OKAY)
         return ret;
-	
+    
     if (!address)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
-	
+    
     *address = (size_t)dheader + offset;
-	
+    
     return XENUS_OKAY;
 }
+
+// TODO: check relocation table bounds
 
 error_t pe_loader_check_datadir(PIMAGE_NT_HEADERS ntheader, uint32_t index, size_t size, size_t file_len)
 {
@@ -78,7 +78,7 @@ error_t pe_loader_check_datadir(PIMAGE_NT_HEADERS ntheader, uint32_t index, size
     dir = ntheader->OptionalHeader64.DataDirectory[index];
 
     if ((!dir.Size) && (!dir.VirtualAddress))
-        return XENUS_STATUS_OKAY_PE_DATA_DIR_NOT_PRESENT; 
+        return XENUS_STATUS_PE_DATA_DIR_NOT_PRESENT; 
 
     //Check size of struct
     if (size > dir.Size)
@@ -95,7 +95,9 @@ error_t pe_loader_check_datadir(PIMAGE_NT_HEADERS ntheader, uint32_t index, size
 }
 
 error_t pe_loader_check_import_names(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader, PIMAGE_IMPORT_DESCRIPTOR imports, size_t file_len)
-{    
+{
+    // TODO: bounds checking
+
     return XENUS_OKAY;
 }
 
@@ -106,7 +108,7 @@ error_t pe_loader_check_imports(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader,
 
     if ((ret = pe_loader_virt_to_address(dheader, ntheader, ntheader->OptionalHeader64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress, (uint64_t *)&imports)) != XENUS_OKAY)
         return ret;
-
+    
     return pe_loader_check_import_names(dheader, ntheader, imports, file_len);
 }
 
@@ -126,12 +128,12 @@ error_t pe_loader_check_exports_names(PDOS_HEADER dheader, PIMAGE_NT_HEADERS nth
             return ret;
 
         //TODO check name length - should be within PIMAGE_EXPORT_DIRECTORY.Size
-        for (int i = 0; i < 100; i++)
-            if (address_name[i] == 0x00) break;
-            else if (i == 100)
+        if (strnlen(address_name, PE_MAX_SYMBOL_LENGTH) == PE_MAX_SYMBOL_LENGTH)
                 return XENUS_ERROR_PE_BAD_EXPORTS;
     }
 
+    // TODO check that NumberOfNames is not greater than NumberOfAddresses
+    
     return XENUS_OKAY;
 }
 
@@ -148,6 +150,7 @@ error_t pe_loader_check_exports(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader,
 
 error_t pe_loader_check_iat(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader, size_t file_len)
 {
+    // TODO: bounds checking
     return XENUS_OKAY;
 }
 
@@ -159,9 +162,12 @@ error_t pe_loader_check_nt(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader, size
     if (file_len < (sizeof(DOS_HEADER) + 4/*pe 00*/ + sizeof(IMAGE_FILE_HEADER) + ntheader->FileHeader.SizeOfOptionalHeader + (ntheader->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER))))
         return XENUS_ERROR_PE_GENERIC_UNUSUAL_SIZE;
 
-	if ((ntheader->FileHeader.Characteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) == 0)
-		return XENUS_ERROR_PE_NO_DYN_BASE;
-	
+    if ((ntheader->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) == 0)
+        return XENUS_ERROR_PE_NO_DYN_BASE;
+
+    if (ntheader->FileHeader.Machine != 0x8664)
+        return XENUS_ERROR_PE_MACHINE_TYPE_NOT_MATCHED;
+
     return XENUS_OKAY;
 }
 
@@ -173,22 +179,21 @@ error_t pe_loader_check_segs(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader, si
     secs = (PIMAGE_SECTION_HEADER)((uint64_t)&ntheader->OptionalHeader64 + ntheader->FileHeader.SizeOfOptionalHeader);
 
     for (i = 0; i < ntheader->FileHeader.NumberOfSections; i++)
-        if ((file_len) < (secs[i].PointerToRawData + secs[i].SizeOfRawData))
+        if ((secs[i].PointerToRawData + secs[i].SizeOfRawData) > file_len)
             return XENUS_ERROR_PE_GENERIC_UNUSUAL_SIZE;
 
 
-	//TODO: check alignment
+    //TODO: check alignment
     return XENUS_OKAY;
 }
 
 error_t pe_loader_check_sec(PDOS_HEADER dheader, PIMAGE_NT_HEADERS ntheader, size_t length)
 {
-	hackerz("You may want to change this stub to MOV RAX, XENUS_OKAY; RET; :^)");
 
     return XENUS_OKAY;
 }
 
-error_t pe_loader_check(void * ptr, size_t min_dir_level, size_t file_len)
+error_t pe_loader_check(void * ptr, size_t file_len, size_t min_dir_level)
 {
     error_t ret;
     PDOS_HEADER dheader;
@@ -216,25 +221,32 @@ error_t pe_loader_check(void * ptr, size_t min_dir_level, size_t file_len)
 
     if (min_dir_level >= IMAGE_DIRECTORY_ENTRY_EXPORT)
     {
-        if (ERROR(ret = pe_loader_check_datadir(ntheader, IMAGE_DIRECTORY_ENTRY_EXPORT, sizeof(IMAGE_EXPORT_DIRECTORY), file_len)))
-            return ret;
-        else if (ERROR(ret = pe_loader_check_exports(dheader, ntheader, file_len)))
+        if (NO_ERROR(ret = pe_loader_check_datadir(ntheader, IMAGE_DIRECTORY_ENTRY_EXPORT, sizeof(IMAGE_EXPORT_DIRECTORY), file_len)))
+            if (STRICTLY_OKAY(ret)) 
+                if (ERROR(ret = pe_loader_check_exports(dheader, ntheader, file_len)))
+                    return ret;
+        else
             return ret;
     }
 
     if (min_dir_level >= IMAGE_DIRECTORY_ENTRY_IMPORT)
     {
-        if (ERROR(ret = pe_loader_check_datadir(ntheader, IMAGE_DIRECTORY_ENTRY_IMPORT, sizeof(IMAGE_IMPORT_DESCRIPTOR), file_len)))
+        if (NO_ERROR(ret = pe_loader_check_datadir(ntheader, IMAGE_DIRECTORY_ENTRY_IMPORT, sizeof(IMAGE_IMPORT_DESCRIPTOR), file_len)))
+            if (STRICTLY_OKAY(ret)) 
+                if (ERROR(ret = pe_loader_check_imports(dheader, ntheader, file_len)))
+                    return ret;
+        else
             return ret;
-        else if (ERROR(ret = pe_loader_check_imports(dheader, ntheader, file_len)))
-            return ret;
+       
     }
 
     if (min_dir_level >= IMAGE_DIRECTORY_ENTRY_IAT)
     {
-        if (ERROR(ret = pe_loader_check_datadir(ntheader, IMAGE_DIRECTORY_ENTRY_IAT, 0, file_len)))
-            return ret;
-        else if (ERROR(ret = pe_loader_check_iat(dheader, ntheader, file_len)))
+        if (NO_ERROR(ret = pe_loader_check_datadir(ntheader, IMAGE_DIRECTORY_ENTRY_IAT, 0, file_len)))
+            if (STRICTLY_OKAY(ret)) 
+                if (ERROR(ret = pe_loader_check_iat(dheader, ntheader, file_len)))
+                    return ret;
+        else
             return ret;
     }
 

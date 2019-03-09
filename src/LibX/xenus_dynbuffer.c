@@ -4,11 +4,9 @@
     License: All Rights Reserved J. Reece Wilson
 */  
 #include <xenus.h>
-#include <libx/xenus_dynbuffer.h>
-#include <libx/xenus_memory.h> 
-#include "../access_sys.h"
-
-#define DYN_BUFFER_MAGIC 0xAD431204
+#include <kernel/libx/xenus_dynbuffer.h>
+#include <kernel/libx/xenus_memory.h> 
+#include "../Boot/access_system.h"
 
 XENUS_EXPORT error_t buffer_alloc(uint_t length, dynbuffer_p* outdynbuffer)
 {
@@ -34,12 +32,11 @@ XENUS_EXPORT error_t buffer_alloc(uint_t length, dynbuffer_p* outdynbuffer)
         return XENUS_ERROR_OUT_OF_MEMORY;
     }
 
-    buffer->magic = DYN_BUFFER_MAGIC;
+    buffer->magic = XENUS_HASHCODE_DYNBUF;
     buffer->length = length;
     buffer->buffer = data;
 
     *outdynbuffer = buffer;
-
     return XENUS_OKAY;
 }
 
@@ -48,7 +45,7 @@ XENUS_EXPORT error_t buffer_free(dynbuffer_p buffer)
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (buffer->buffer)
@@ -66,7 +63,7 @@ XENUS_EXPORT error_t buffer_resize(dynbuffer_p buffer, uint_t length)
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
     
     if (!length)
@@ -100,7 +97,7 @@ XENUS_EXPORT error_t buffer_shrink(dynbuffer_p buffer, uint_t subtract)
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!buffer->buffer)
@@ -134,7 +131,7 @@ XENUS_EXPORT error_t buffer_expand(dynbuffer_p buffer, uint_t add)
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!buffer->buffer)
@@ -173,7 +170,7 @@ XENUS_EXPORT error_t buffer_memcpy(dynbuffer_p buffer, uint_t index, void * src,
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!buffer->buffer)
@@ -197,7 +194,7 @@ XENUS_EXPORT error_t buffer_memset(dynbuffer_p buffer, uint_t index, uint8_t c, 
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!buffer->buffer)
@@ -227,22 +224,22 @@ XENUS_EXPORT error_t buffer_fill(dynbuffer_p buffer, uint8_t c)
 
 XENUS_EXPORT error_t buffer_memcmp(dynbuffer_p buffer, uint_t index, void * src, uint_t length)
 {
-    return XENUS_ERROR_NOT_IMEPLEMENTED;
+    return XENUS_ERROR_NOT_IMPLEMENTED;
 }
 
 XENUS_EXPORT error_t buffer_slice(dynbuffer_p buffer, uint_t start, uint_t end)
 {
-    return XENUS_ERROR_NOT_IMEPLEMENTED;
+    return XENUS_ERROR_NOT_IMPLEMENTED;
 }
 
 XENUS_EXPORT error_t buffer_copy(dynbuffer_p buffer, uint_t index, dynbuffer_p dynsrc, uint_t srcindx, uint_t length)
 {
-    return XENUS_ERROR_NOT_IMEPLEMENTED;
+    return XENUS_ERROR_NOT_IMPLEMENTED;
 }
 
 XENUS_EXPORT error_t buffer_compare(dynbuffer_p buffer, uint_t index, dynbuffer_p dynsrc, uint_t srcindx, uint_t length)
 {
-    return XENUS_ERROR_NOT_IMEPLEMENTED;
+    return XENUS_ERROR_NOT_IMPLEMENTED;
 }
 
 XENUS_EXPORT error_t buffer_get(dynbuffer_p buffer, uint_t index, void * outbuffer, uint_t length)
@@ -258,7 +255,7 @@ XENUS_EXPORT error_t buffer_get(dynbuffer_p buffer, uint_t index, void * outbuff
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!buffer->buffer)
@@ -283,7 +280,7 @@ XENUS_EXPORT error_t buffer_length(dynbuffer_p buffer, int_t * length)
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!buffer->buffer)
@@ -301,7 +298,7 @@ XENUS_EXPORT error_t buffer_unsafe_get(dynbuffer_p buffer, uint8_t ** out)
     if (!buffer)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (buffer->magic != DYN_BUFFER_MAGIC)
+    if (buffer->magic != XENUS_HASHCODE_DYNBUF)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!buffer->buffer)

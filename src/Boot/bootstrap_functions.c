@@ -3,7 +3,7 @@
     Author: Reece W. 
     License: All Rights Reserved J. Reece Wilson
 */  
-#pragma once
-#include <kernel/peloader/pe_loader.h>
+#include <xenus.h>
+#include "bootstrap_functions.h"
 
-error_t pe_loader_init();
+bootstrap_t * g_functions = 0;

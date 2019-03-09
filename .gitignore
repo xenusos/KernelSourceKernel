@@ -15,16 +15,16 @@
 *.userprefs
 
 # Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
+[Ddlink_sebug/
+[Ddlink_sebugPublic/
+[Rrlink_selease/
+[Rrlink_seleases/
 x64/
 x86/
 bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
+[Bblink_sin/
+[Oolink_sbj/
+[Lllink_sog/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -35,16 +35,16 @@ bld/
 Generated\ Files/
 
 # MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
+[Ttlink_sest[Rrlink_sesult*/
+[Bblink_suild[Lllink_sog.*
 
 # NUNIT
 *.VisualState.xml
 TestResult.xml
 
 # Build Results of an ATL Project
-[Dd]ebugPS/
-[Rr]eleasePS/
+[Ddlink_sebugPS/
+[Rrlink_seleasePS/
 dlldata.c
 
 # Benchmark Results
@@ -117,7 +117,7 @@ $tf/
 
 # ReSharper is a .NET coding add-in
 _ReSharper*/
-*.[Rr]e[Ss]harper
+*.[Rrlink_se[Sslink_sharper
 *.DotSettings.user
 
 # JustCode is a .NET coding add-in
@@ -150,7 +150,7 @@ AutoTest.Net/
 .sass-cache/
 
 # Installshield output folder
-[Ee]xpress/
+[Eelink_sxpress/
 
 # DocProject is a documentation generator add-in
 DocProject/buildhelp/
@@ -166,7 +166,7 @@ DocProject/Help/html
 publish/
 
 # Publish Web Output
-*.[Pp]ublish.xml
+*.[Pplink_sublish.xml
 *.azurePubxml
 # Note: Comment the next line if you want to checkin your web deploy settings,
 # but database connection strings (with potential passwords) will be unencrypted
@@ -181,11 +181,11 @@ PublishScripts/
 # NuGet Packages
 *.nupkg
 # The packages folder can be ignored because of Package Restore
-**/[Pp]ackages/*
+**/[Pplink_sackages/*
 # except build/, which is used as an MSBuild target.
-!**/[Pp]ackages/build/
+!**/[Pplink_sackages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
-#!**/[Pp]ackages/repositories.config
+#!**/[Pplink_sackages/repositories.config
 # NuGet v3's project.json files produces more ignorable files
 *.nuget.props
 *.nuget.targets
@@ -207,9 +207,9 @@ _pkginfo.txt
 
 # Visual Studio cache files
 # files ending in .cache can be ignored
-*.[Cc]ache
+*.[Cclink_sache
 # but keep track of directories ending in .cache
-!*.[Cc]ache/
+!*.[Cclink_sache/
 
 # Others
 ClientBin/

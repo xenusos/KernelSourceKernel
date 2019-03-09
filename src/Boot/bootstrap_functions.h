@@ -4,6 +4,6 @@
     License: All Rights Reserved J. Reece Wilson
 */  
 #pragma once
-#include <kernel/peloader/pe_loader.h>
 
-error_t pe_loader_init();
+#include <all/_generic_bootstrap.h>
+extern bootstrap_t * g_functions;

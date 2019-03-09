@@ -5,11 +5,11 @@
 */
 
 #include <xenus.h>
-#include <libx/xenus_list_linked.h>
-#include <libx/xenus_memory.h> 
-#include "../access_sys.h"
+#include <kernel/libx/xenus_list_linked.h>
+#include <kernel/libx/xenus_memory.h> 
+#include "../Boot/access_system.h"
 
-XENUS_EXPORT linked_list_entry_p linked_list_append(linked_list_head_p head, size_t buf_len)
+XENUS_EXPORT linked_list_entry_p linked_list_append(linked_list_head_p head, size_t buf_len)  
 {
     linked_list_entry_p entry;
 
@@ -19,16 +19,17 @@ XENUS_EXPORT linked_list_entry_p linked_list_append(linked_list_head_p head, siz
     if (head->dead)
         goto error;
 
-    entry = (linked_list_entry_p)malloc(sizeof(linked_list_entry_t) + buf_len);
+    entry = (linked_list_entry_p) malloc(sizeof(linked_list_entry_t) + buf_len);
 
     if (!entry)
         goto error;
 
-    entry->next = 0;
-    entry->before = head->top;
-    entry->head = head;
-    entry->end_of_struct = (void*)((uint8_t*)entry + sizeof(linked_list_entry_t));
-
+    entry->next                = 0;
+    entry->before            = head->top;
+    entry->head                = head;
+    entry->end_of_struct    = (void*)((uint8_t*)entry + sizeof(linked_list_entry_t));
+    head->length++;
+    
     if (!head->bottom)
         head->bottom = entry;
 
@@ -41,7 +42,7 @@ error:
     return (linked_list_entry_p)0;
 }
 
-XENUS_EXPORT error_t linked_list_remove(linked_list_entry_p entry)
+XENUS_EXPORT error_t linked_list_remove(linked_list_entry_p entry) // O(1)
 {
     if (!entry) return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
     if (entry->head->top == entry && entry->head->bottom == entry)
@@ -72,6 +73,8 @@ XENUS_EXPORT error_t linked_list_remove(linked_list_entry_p entry)
     if (entry->next)
         entry->next->before = entry->before;
 
+    entry->head->length--;
+
     free(entry);
     return XENUS_OKAY;
 }
@@ -80,7 +83,7 @@ XENUS_EXPORT linked_list_head_p linked_list_create()
 {
     linked_list_head_p head;
     head = (linked_list_head_p) malloc(sizeof(linked_list_head_t));
-    memset(head, 0, sizeof(linked_list_head_t)); //no one ever checks memset
+    memset(head, 0, sizeof(linked_list_head_t)); 
     return head;
 }
 
