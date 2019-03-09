@@ -155,6 +155,7 @@ static void _dyncb_alloc_translator_stub(bool aligned, int parameters, void * ms
     #undef EMIT_CALL
 }
 
+// TODO: implement an alignment correction routine rather than branch on unaligned
 static void _dyncb_alloc_selector_stub(void * aligned, void * unaligned, void * sys_v, uint64_t max_len)
 {
     size_t index;
@@ -168,8 +169,8 @@ static void _dyncb_alloc_selector_stub(void * aligned, void * unaligned, void * 
     #define EMIT_INIT                 EMIT_CONST_ARRAY(selector_init_rax)
     #define EMIT_AND                  EMIT_CONST_ARRAY(selector_and_rax)
     #define EMIT_CMP                  EMIT_CONST_ARRAY(selector_cmp)
-    #define EMIT_JE(n)               {EMIT_CONST_ARRAY(selector_jmp_to_true_n) *(uint8_t *)CALC_OFFSET(1, sizeof(selector_jmp_to_true_n)) = n; } 
-    #define EMIT_JMP(n)              {EMIT_CONST_ARRAY(selector_call_n)            *(void **)CALC_OFFSET(2, sizeof(selector_call_n)) = n; } 
+    #define EMIT_JE(n)               {EMIT_CONST_ARRAY(selector_jmp_to_true_n)     *(uint8_t *)CALC_OFFSET(1, sizeof(selector_jmp_to_true_n)) = n; } 
+    #define EMIT_JMP(n)              {EMIT_CONST_ARRAY(selector_call_n)              *(void **)CALC_OFFSET(2, sizeof(selector_call_n))        = n; } 
 
     EMIT_INIT
     EMIT_AND
