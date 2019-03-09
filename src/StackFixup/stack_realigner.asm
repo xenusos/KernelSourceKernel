@@ -10,7 +10,7 @@ PUBLIC stack_realigner
 stack_realigner PROC
     mov rax, rsp
     ;;add rax, 8
-    and rax, 15d     ;; rsp + 32 + 8 should be divisible by 16. 32 is divisible by 16; this is ignored. (rsp + 8) & 15 == (rsp + 8) mod 16 == 0
+    and rax, 15d       ;; rsp + 32 + 8 should be divisible by 16. 32 is divisible by 16; this is ignored. (rsp + 8) & 15 == (rsp + 8) mod 16 == 0
     cmp rax, 0         ;; if this isn't zero, appending an additional integer onto the stack is sufficient to go from 8 byte alignment to 16 byte alignment.
     
     je alreadyAligned
