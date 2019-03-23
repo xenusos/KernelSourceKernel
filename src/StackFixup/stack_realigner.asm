@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;    Purpose:                                        ;;
+;;    Purpose: MS_ABI x64 STACK ALIGNMENT CORRECTOR   ;;
 ;;    Author: Reece W.                                ;;
 ;;    License: All Rights Reserved J. Reece Wilson    ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -7,28 +7,33 @@ PUBLIC stack_realigner
 
 .code
 
-stack_realigner PROC
+;; note: your backtrace WILL end here. msvc and the debugging apis should determine this to be external code 
+;; QWORD(* stack_realigner)(QWORD(* callback)(void * context), void * context)
+stack_realigner PROC    
     mov rax, rsp
-    ;;add rax, 8
-    and rax, 15d       ;; rsp + 32 + 8 should be divisible by 16. 32 is divisible by 16; this is ignored. (rsp + 8) & 15 == (rsp + 8) mod 16 == 0
-    cmp rax, 0         ;; if this isn't zero, appending an additional integer onto the stack is sufficient to go from 8 byte alignment to 16 byte alignment.
-    
-    je alreadyAligned
+    ;;add rax, 8	   ;;   [example prolog:  push  R15		    - WE ARE HERE - NOT ALIGNED
+                       ;;                     push  R14
+                       ;;                     push  R13		    - POSTEXEC: 16 byte aligned
+                       ;;                     sub rsp, reserve; - POSTEXEC: 16 byte aligned	] 
+                       ;;
+    and rax, 15d       ;; 
+    cmp rax, 0         ;;  ZF = bit((rsp & 15) - 0) == 0) == bit(rsp mod 16 == 0)
+                      
+    je alreadyAlignedAsLeaf  ;; if (ZF) { alreadyAligned } else { notAligned }
     notAligned:
+        sub rsp, 8  
         sub rsp, 32d
-        sub rsp, 8
-        mov r9, rcx
+        mov rax, rcx
         mov rcx, rdx
-        call r9
+        call rax
         add rsp, 8
         jmp cleanUp
 
-    alreadyAligned:
+    alreadyAlignedAsLeaf:
         sub rsp, 32d
-        mov r9, rcx
+        mov rax, rcx
         mov rcx, rdx
-        call r9
-
+        call rax
     cleanUp:
         add rsp, 32
         ret
