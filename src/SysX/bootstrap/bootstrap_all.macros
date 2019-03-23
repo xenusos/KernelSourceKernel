@@ -17,6 +17,7 @@ ADD_FUNCTION_3(memory, memcmp);
 ADD_FUNCTION_6(memory, memscan);
 
 ADD_FUNCTION_1(memory, linux_page_to_pfn);
+ADD_FUNCTION_1(memory, linux_pfn_to_page);
 
 ADD_FUNCTION_12(string, strcasecmp);
 ADD_FUNCTION_12(string, strncasecmp);

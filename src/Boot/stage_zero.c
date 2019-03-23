@@ -47,6 +47,7 @@ START_POINT(stage_zero)
     TEST_MEMORY(memcmp);
     TEST_MEMORY(memscan);
     TEST_MEMORY(linux_page_to_pfn);
+    TEST_MEMORY(linux_pfn_to_page);
     
 #undef TEST_MEMORY
 

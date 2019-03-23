@@ -419,6 +419,7 @@ ADD_FUNCTION_4(remap_vmalloc_range_partial)
 ADD_FUNCTION_3(remap_vmalloc_range)
 ADD_FUNCTION_2(alloc_vm_area)
 ADD_FUNCTION_1(free_vm_area)
+ADD_FUNCTION_4(map_kernel_range_noflush)
 // memory start. 
 ADD_FUNCTION_3(zap_vma_ptes)
 ADD_FUNCTION_3(vm_insert_page)
@@ -452,3 +453,9 @@ ADD_FUNCTION_1(get_task_mm)
 ADD_FUNCTION_0(get_max_files)
 ADD_FUNCTION_3(alloc_file)
 ADD_FUNCTION_1(fput)
+// mprotect start. 
+ADD_FUNCTION_5(do_mprotect_pkey)
+ADD_FUNCTION_2(do_pkey_free)
+ADD_FUNCTION_3(do_pkey_alloc)
+// ioremap start. 
+ADD_FUNCTION_4(ioremap_page_range)
