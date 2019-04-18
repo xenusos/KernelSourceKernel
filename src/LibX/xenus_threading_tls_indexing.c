@@ -43,9 +43,9 @@ XENUS_SYM error_t thread_indexing_create(uint_t max_threads, thread_index_counte
     }
 
     head->list            = list;
-    head->max_threads    = MAX(max_threads, 2);
-    head->counter        = 0;
-    head->mutex            = mutex;
+    head->max_threads     = MAX(max_threads, 2);
+    head->counter         = 0;
+    head->mutex           = mutex;
 
     *tic = head;
     return XENUS_OKAY;

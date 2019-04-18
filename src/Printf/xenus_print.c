@@ -424,7 +424,7 @@ static void printf_strstream_putcf(void *data, char c)
 
     stream = (printf_string_stream_p)data;
 
-    if (stream->num_chars < stream->dest_capacity)
+    if (stream->num_chars < stream->dest_capacity && stream->dest)
         stream->dest[stream->num_chars] = c;
 
     stream->num_chars++;
@@ -434,7 +434,7 @@ size_t printf_fmt_string(char *str, size_t size, const char *format, va_list ap)
 {
     printf_string_stream_t data;
 
-    if (size < 1)
+    if ((size < 1) && (str))
         return 0;
 
     data.dest = str;
@@ -443,10 +443,13 @@ size_t printf_fmt_string(char *str, size_t size, const char *format, va_list ap)
 
     printf_fmt_stream(&data, printf_strstream_putcf, format, ap);
 
-    if (data.num_chars < data.dest_capacity)
-        data.dest[data.num_chars] = '\0';
-    else
-        data.dest[data.dest_capacity] = '\0';
+    if (data.dest)
+    {
+        if (data.num_chars < data.dest_capacity)
+            data.dest[data.num_chars] = '\0';
+        else
+            data.dest[data.dest_capacity] = '\0';
+    }
 
     return data.num_chars;
 }

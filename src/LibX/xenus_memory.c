@@ -25,8 +25,8 @@ enum allocation_type_e
 typedef struct allocator_header_s
 {
     uint32_t allocator_magic;
-    size_t actual_length;
-    size_t request_length;
+    uint32_t actual_length;
+    uint32_t request_length;
     //void * base_buf; - deprecated, use ALLOCATOR_GET_LINUX_BUFFER.
     uint8_t base_buf_offset;
     uint8_t type;
@@ -69,14 +69,21 @@ static void _linux_free(void * buffer, int type)
     }
 }
 
+static inline bool _atomic_alloc(bool atomic)
+{
+    return atomic || mem_atomic;
+}
+
 static bool _linux_alloc(bool atomic, size_t length, void ** out, size_t * actual_length, int * type)
 {
     void * buffer;
 
-    if (length >= 4096) 
+    atomic = _atomic_alloc(atomic);
+
+    if ((length >= 4096) && (!atomic))
         goto alt_alloc;
 
-    buffer = kmalloc(length, ((atomic || mem_atomic) ? GFP_ATOMIC : 0) | GFP_KERNEL);
+    buffer = kmalloc(length, (atomic ? GFP_ATOMIC : 0) | GFP_KERNEL);
 
     if (buffer)
     {
@@ -84,13 +91,17 @@ static bool _linux_alloc(bool atomic, size_t length, void ** out, size_t * actua
         *type = XENUS_ALLOCATOR_KMALLOC;
         goto out;
     }
-
+    
 alt_alloc:
-    ASSERT(!atomic, "can't allocate virtually contiguous buffer in an atomic environment");
-    if (mem_atomic)
+ 
+    if (atomic)
     {
-        puts("warning xenus kernel: allocating a virtually contiguous buffer - disregarding global atomicity");
+        *out = NULL;
+        *type = 0;
+        *actual_length = 0;
+        return false;
     }
+
     buffer = vmalloc(length);
     *actual_length = length;
     *type = XENUS_ALLOCATOR_VMALLOC;
@@ -114,14 +125,14 @@ XENUS_EXPORT void * malloc_common(size_t length, bool atomic)
     allocator_header_p header;
 
     if (!_linux_alloc(atomic, length + ALLOCATOR_PADDING, &buf, &act_len, &type))
-        return 0;
+        return NULL;
 
     user_buf    = (void *)((((size_t)buf) + ALLOCATOR_PADDING - 1) & ~(16 - 1));          // find allocated buffer after padding and the header that we want to prepend
     header      = (allocator_header_p)(((size_t)user_buf) - sizeof(allocator_header_t));  // subtract header size from the allocated buffer ptr 
 
 
 #ifndef NO_LIBX_SAFETY
-    if (((size_t)user_buf) + length > ((size_t)buf) + act_len)
+    if ((((size_t)user_buf) + length) > (((size_t)buf) + act_len))
         panic("Malloc Math Error: integer overflow issue - out of bounds! \n");
 
     if (((size_t)header) < ((size_t)buf))
@@ -184,12 +195,12 @@ XENUS_EXPORT void alloc_dbg_info(void * ptr)
            " Header                      : 0x%p   \n"
            " Base Buffer                 : 0x%p   \n"
            " Base Virt (usr) Buffer      : 0x%p   \n"
-           " Type                        : %zi     \n"
-           " Actual Length               : %zi    \n"
-           " Requested Length            : %zi    \n"
-           " Post Virt Buffer Padding    : %zi    \n"
-           " Pre header Padding          : %zi    \n"
-           " Header Length               : %zi    \n"
+           " Type                        : %zu     \n"
+           " Actual Length               : %zu    \n"
+           " Requested Length            : %zu    \n"
+           " Post Virt Buffer Padding    : %zu    \n"
+           " Pre header Padding          : %zu    \n"
+           " Header Length               : %zu    \n"
            "------------ BUFFER INFO ------------ \n",
                 header,
                 base_buffer,

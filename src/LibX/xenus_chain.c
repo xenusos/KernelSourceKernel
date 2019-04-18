@@ -149,7 +149,7 @@ XENUS_SYM error_t _chain_deallocate_ex(chain_p chain, bool deleteAll, uint64_t h
     }
 
     if (deleteAll) return XENUS_OKAY;
-    else return XENUS_ERROR_CHAIN_NOT_FOUND;
+    else return XENUS_ERROR_LINK_NOT_FOUND;
 }
 
 XENUS_SYM error_t chain_deallocate_search(chain_p chain, uint64_t hash)
