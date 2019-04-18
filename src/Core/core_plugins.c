@@ -335,7 +335,7 @@ static error_t _plugins_init_iat(module_ctx_p mod_data, size_t * o_resolved, siz
 
         if (!mod_found)
         {
-            printf("ERROR: Attempted to patch bad IAT. Reference to non-existent symbol in non-existent module.\n");
+            printf("ERROR: Attempted to patch bad IAT. Reference to non-existent symbol in non-existent module. %s was not found in %s \n", entry->symbol, entry->module);
             mod_data->has_hard_error = true;
             mod_data->hard_error = XENUS_ERROR_PLUGIN_BAD_IAT;
         }
