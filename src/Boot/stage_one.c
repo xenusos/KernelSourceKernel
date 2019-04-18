@@ -12,6 +12,8 @@
 
 #include "../Shutdown/shutdown_main.h"
 
+#include "../LibX/xenus_debug.h"
+
 void *          kernel_base              = 0;
 linux_info_t    kernel_information       = { 0 };
 
@@ -24,6 +26,9 @@ START_POINT(stage_one)
         return STAGE_ONE_ERR;
 
     //xlib_start();        - no longer present.
+    // TODO: bring back xlib_start
+    xlib_dbg_init();
+
     //printf_allow_xlib(); - no longer present.
     pe_loader_init();
     shutdown_init();
