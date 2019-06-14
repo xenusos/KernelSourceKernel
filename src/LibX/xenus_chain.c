@@ -4,9 +4,32 @@
     License: All Rights Reserved J. Reece Wilson
 */  
 #include <xenus.h>
-#include <kernel/libx/xenus_chain.h>
 #include <kernel/libx/xenus_memory.h> 
 #include "../Boot/access_system.h"
+
+#define DEFINED_IN_SOURCE_CHAIN
+typedef void(*chains_deallocation_notifier_t)(uint64_t hash, void * buffer);
+
+struct chain_s;
+typedef struct link_s
+{
+    uint64_t hash;
+    struct link_s * next;
+    struct link_s * before;
+    chains_deallocation_notifier_t cb;
+    struct chain_s * chain;
+    void * _buf;
+} *link_p, *link_ref, link_t;
+
+typedef struct chain_s
+{
+    link_p bottom; // start - bottom
+
+    link_p tail;   // end   - top
+} *chain_p, *chain_ref, chain_t;
+
+
+#include <kernel/libx/xenus_chain.h>
 
 XENUS_SYM error_t chain_allocate(chain_p * chain)
 {

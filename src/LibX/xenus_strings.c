@@ -43,5 +43,5 @@ XENUS_EXPORT size_t vsnprintf(char *buf, size_t size, const char *fmt, va_list a
 XENUS_EXPORT size_t vsprintf(char *buf, const char *fmt, va_list ap)
 {
     // Having this function available is such a bad idea
-    return strlen(strcat(buf, "NoSBO")); // No StackBufferOverfollow
+    return strlen(strcat(buf, "NoSBO")); // No StackBufferOverflow
 }
