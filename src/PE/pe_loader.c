@@ -117,12 +117,9 @@ error_t pe_loader_preload_init(const void * buffer, size_t length, const char * 
     if (!name)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    mod_len = strnlen(name, PE_MAX_MODULE_LENGTH);
+    mod_len = strnlen(name, PE_MAX_MODULE_LENGTH - C_NULL_CHAR);
 
-    if (mod_len == 0)
-        return XENUS_ERROR_MODULE_NAME_TOO_LONG;
-
-    if (mod_len == PE_MAX_MODULE_LENGTH)
+    if ((mod_len == 0) || (mod_len == PE_MAX_MODULE_LENGTH - C_NULL_CHAR))
         return XENUS_ERROR_MODULE_NAME_TOO_LONG;
 
     entry = linked_list_append(module_list, sizeof(module_t));
@@ -144,7 +141,7 @@ error_t pe_loader_preload_init(const void * buffer, size_t length, const char * 
     element->not_loaded.buffer = saved_pe;
     element->not_loaded.length = length;
 
-    memcpy(element->name, name, mod_len);
+    memcpy(element->name, name, mod_len + C_NULL_CHAR);
 
     memcpy(saved_pe, buffer, length);
 
@@ -243,13 +240,16 @@ error_t pe_loader_load(const void * buffer, size_t length, const char * name, pe
     if (!name)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (ERROR(ret = pe_loader_preload_init(buffer, length, name, &hd)))
+    ret = pe_loader_preload_init(buffer, length, name, &hd);
+    if (ERROR(ret))
         return ret;
 
-    if (ERROR(ret = pe_loader_preload_analyse(hd))) 
+    ret = pe_loader_preload_analyse(hd);
+    if (ERROR(ret)) 
         return ret;
 
-    if (ERROR(ret = pe_loader_preload_load(hd))) 
+    ret = pe_loader_preload_load(hd);
+    if (ERROR(ret)) 
         return ret;
 
     *handle = hd;
@@ -298,6 +298,7 @@ pe_handle_h pe_loader_find_module(const char * name)
 
 error_t pe_loader_find_symbol_bymodhandle(pe_handle_h mod_, uint16_t ord, const char * name, bool byordinal, void ** function_ptr)
 {
+
     module_p mod;
     PIMAGE_NT_HEADERS ntheader;
     IMAGE_DATA_DIRECTORY dir;
@@ -394,9 +395,10 @@ error_t pe_loader_find_symbol_bymodname(const char * module, uint16_t ord, const
     if (!name)
         name = "NULL_SYMBOL";
 
-    len = strnlen(module, PE_MAX_SYMBOL_LENGTH);
+    len = strnlen(module, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
 
-    if ((len == PE_MAX_SYMBOL_LENGTH) || (len == 0))
+    if ((len == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+        (len == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
     mod = pe_loader_find_module(module);
@@ -427,19 +429,15 @@ error_t pe_loader_alias(const char * target, const char * dest)
     if (!dest)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    len_target = strnlen(target, PE_MAX_SYMBOL_LENGTH);
-    len_dest   = strnlen(dest, PE_MAX_SYMBOL_LENGTH);
+    len_target = strnlen(target, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
+    len_dest   = strnlen(dest, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
 
-    if (len_dest == PE_MAX_SYMBOL_LENGTH)
+    if ((len_dest == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+        (len_dest == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
-    if (len_dest == 0)
-        return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
-
-    if (len_target == PE_MAX_SYMBOL_LENGTH)
-        return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
-
-    if (len_target == 0)
+    if ((len_target == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+        (len_target == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
     entry = linked_list_append(module_redir, sizeof(mod_redir_t));
@@ -449,8 +447,8 @@ error_t pe_loader_alias(const char * target, const char * dest)
 
     redir = (mod_redir_p) entry->data;
 
-    memcpy(redir->from, target, len_target + 1);
-    memcpy(redir->to, dest, len_dest + 1);
+    memcpy(redir->from, target, len_target + C_NULL_CHAR);
+    memcpy(redir->to, dest, len_dest + C_NULL_CHAR);
     return XENUS_OKAY;
 }
 
@@ -468,13 +466,12 @@ error_t pe_loader_postload_iat_add_symbol_byname(pe_handle_h handle, const char 
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (!replacement)
-    {
-        puts("pe_loader_postload_iat_add_symbol_byname: replacement is null");
-    }
+        return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    len = strlen(symbol) + 1;
+    len = strnlen(symbol, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
 
-    if (len > sizeof(redir->symbol))
+    if ((len == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+        (len == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
     element = (module_p)handle;
@@ -489,7 +486,7 @@ error_t pe_loader_postload_iat_add_symbol_byname(pe_handle_h handle, const char 
 
     redir = (sym_redir_p)entry->data;
 
-    memcpy(redir->symbol, symbol, len);
+    memcpy(redir->symbol, symbol, len + C_NULL_CHAR);
 
     redir->data = replacement;
     return XENUS_OKAY;
@@ -606,7 +603,7 @@ error_t pe_loader_postload_config_iat_new(pe_handle_h handle, iat_patch_result_r
             PIMAGE_IMPORT_BY_NAME   entry_byname;
             iat_patch_entry_ref     entry;
 
-            is_byord      = (iat_thunks[i] & IMAGE_ORDINAL_FLAG64) != 0;
+            is_byord     = (iat_thunks[i] & IMAGE_ORDINAL_FLAG64) != 0;
             entry_byord  = IMAGE_ORDINAL64(iat_thunks[i]);
             entry_byname = RVA(PIMAGE_IMPORT_BY_NAME, iat_thunks[i]);
 
@@ -661,16 +658,18 @@ error_t pe_loader_postload_config_iat_legacy(pe_handle_h handle, size_t * unreso
     if (!handle)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (ERROR(err = pe_loader_postload_get_iat_length(handle, &cnt)))
+    err = pe_loader_postload_get_iat_length(handle, &cnt);
+    if (ERROR(err))
         return err;
     
-    patch_result.list_size    = cnt;
+    patch_result.list_size   = cnt;
     patch_result.list        = calloc(cnt, sizeof(iat_patch_entry_t));
 
     if (!patch_result.list)
         return XENUS_ERROR_OUT_OF_MEMORY;
 
-    if (ERROR(err = pe_loader_postload_config_iat_new(handle, &patch_result))) 
+    err = pe_loader_postload_config_iat_new(handle, &patch_result);
+    if (ERROR(err)) 
         goto exit;
 
     for (size_t i = 0; i < patch_result.entries_appended; i++)
@@ -738,7 +737,7 @@ error_t pe_loader_postload_config_reloc(pe_handle_h handle)
             switch (reloc.type) 
             {
             case IMAGE_REL_BASED_DIR64:
-                *((size_t *)    (page_base + reloc.offset))      += difference;
+                *((size_t *)     (page_base + reloc.offset))      += difference;
                 break;
             case IMAGE_REL_BASED_HIGHLOW:
                 *((uint32_t *)    (page_base + reloc.offset))    += (uint32_t) difference;

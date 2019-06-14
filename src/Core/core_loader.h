@@ -5,4 +5,4 @@
 */  
 #pragma once
 
-void xenus_launch_plugins();
+extern void xenus_launch_plugins();
