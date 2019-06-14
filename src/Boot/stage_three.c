@@ -47,6 +47,7 @@ void stage_three_point_5()
         panic("xenus_stage_4: Xenus: not aligned");
 
     thread_fpu_lock();                          // allow fpu usage on the main thread
+    thread_on_cpu();                            // mostly pointless. we don't do anything in this part of the kernel
     xenus_printf_init_strs();
     printf_attach(&printf_interface_global);    // extend printf with fpu and unicode usage
     xenus_start();                              // execute main function

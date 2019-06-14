@@ -24,6 +24,7 @@ typedef struct
 extern void _ReadWriteBarrier(void);
 extern void __faststorefence(void);
 
+static thread_enter_cpu_p on_cpu_callback = NULL;
 static chain_p hack_exit_ntfy = 0;
 static mutex_k hack_mutex = 0;
 
@@ -31,8 +32,8 @@ static l_int thread_callback(thread_data_p data);
 static void XENUS_MS_ABI trap_kt_thread_attention_callback(uint8_t id, pt_regs_p registers);
 static void XENUS_MS_ABI trap_kp_thread_attention_callback(uint8_t id, pt_regs_p registers);
 static void XENUS_MS_ABI thread_destory(long);
-static size_t XENUS_MS_ABI syscall_kp_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta);
-static size_t XENUS_MS_ABI syscall_kt_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta);
+static size_t XENUS_MS_ABI syscall_kp_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t echo);
+static size_t XENUS_MS_ABI syscall_kt_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t echo);
 
 XENUS_EXPORT error_t thread_create(task_k * out_task, thread_callback_t callback, void * data, const char * name, bool run)
 {
@@ -153,6 +154,8 @@ void __kern_post_context_switch(void)
     if (tls_->fpu_enabled_via_hook)
         __kernel_fpu_begin();
 
+    thread_on_cpu();
+
     if (tls_->pub_switch_post_callback)
         tls_->pub_switch_post_callback();
 }
@@ -163,7 +166,7 @@ void __try_install_switch_hooks(thread_storage_data_p tls_)
         return;
 
     tls_->kern_switch_post_callback = __kern_post_context_switch;
-    tls_->kern_switch_pre_callback    = __kern_pre_context_switch;
+    tls_->kern_switch_pre_callback  = __kern_pre_context_switch;
 }
 
 XENUS_EXPORT bool thread_fpu_lock()
@@ -259,6 +262,17 @@ XENUS_EXPORT void thread_enable_cleanup()
     tls()->kern_thread_exit = thread_destory;
 }
 
+XENUS_EXPORT void thread_set_on_cpu_cb(thread_enter_cpu_p callback)
+{
+    on_cpu_callback = callback;
+}
+
+XENUS_EXPORT void thread_on_cpu()
+{
+    if (on_cpu_callback)
+        on_cpu_callback();
+}
+
 XENUS_EXPORT error_t threading_get_exit_callbacks(thread_exit_cb_t ** list, int * cnt)
 {
     thread_storage_data_p tls_; 
@@ -275,12 +289,12 @@ XENUS_EXPORT error_t threading_get_exit_callbacks(thread_exit_cb_t ** list, int 
     return XENUS_OKAY;
 }
 
-
 static l_int thread_callback(thread_data_p data)
 {
     l_int  ret;
     thread_fpu_lock();
     thread_enable_cleanup();
+    thread_on_cpu();
     ret = (l_int)stack_realigner((size_t(*)(size_t))data->callback, (size_t)data->data);
     free(data);
     thread_fpu_unlock();
@@ -377,7 +391,7 @@ static void XENUS_MS_ABI thread_destory(long exit)
     stack_realigner((size_t(*)(size_t))thread_destory_aligned, (size_t)exit);
 }
 
-static size_t syscall_handler(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, bool is_task)
+static size_t syscall_handler(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t arg_echo, bool is_task)
 {
     xenus_sys_cb_t callback;
     xenus_syscall_t trap;
@@ -400,6 +414,7 @@ static size_t syscall_handler(uint8_t id, size_t arg_alpha, size_t arg_bravo, si
     trap.arg_bravo    = arg_bravo;
     trap.arg_charlie  = arg_charlie;
     trap.arg_delta    = arg_delta;
+    trap.arg_echo     = arg_echo;
 
     if (callback)
         stack_realigner((size_t(*)(size_t))callback, (size_t)&trap);
@@ -410,12 +425,12 @@ static size_t syscall_handler(uint8_t id, size_t arg_alpha, size_t arg_bravo, si
     return trap.response;
 }
 
-static size_t XENUS_MS_ABI syscall_kt_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta)
+static size_t XENUS_MS_ABI syscall_kt_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t arg_echo)
 {
-    return syscall_handler(id, arg_alpha, arg_bravo, arg_charlie, arg_delta, true);
+    return syscall_handler(id, arg_alpha, arg_bravo, arg_charlie, arg_delta, arg_echo, true);
 }
 
-static size_t XENUS_MS_ABI syscall_kp_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta)
+static size_t XENUS_MS_ABI syscall_kp_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t arg_echo)
 {
-    return syscall_handler(id, arg_alpha, arg_bravo, arg_charlie, arg_delta, false);
+    return syscall_handler(id, arg_alpha, arg_bravo, arg_charlie, arg_delta, arg_echo, false);
 }
