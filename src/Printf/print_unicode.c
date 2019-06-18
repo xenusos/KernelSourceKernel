@@ -16,7 +16,7 @@ static int_t _strwlen(uint8_t * strbuf)
     uint8_t lower, upper;
     uint_t ret;
     ret = 0;
-    for (READ_NEXT; lower != 0 || upper != 0; READ_NEXT)
+    for (READ_NEXT;  !(lower == 0 && upper == 0); READ_NEXT)
         ret++;
     return ret;
 }
@@ -27,7 +27,7 @@ void xenus_printf_write_unicode(void * glhf, void *data, putc_f putf, printf_sta
     uint8_t * strbuf;
     char * ascii_ish;
     uint8_t lower, upper;
-    bool no_complementary_print;
+    bool read_low_sup;
     int i;
 
     i        = 0;
@@ -40,28 +40,38 @@ void xenus_printf_write_unicode(void * glhf, void *data, putc_f putf, printf_sta
     if (!ascii_ish)
         return;
 
-    no_complementary_print = false;
+    read_low_sup = false;
     while (READ_NEXT, lower || upper)
     {
         uint8_t cur;
+        uint16_t codepoint = lower | upper << 8;
 
-        if (upper && lower)
+        if (read_low_sup)
         {
-            if (no_complementary_print) 
+            if (codepoint >= 0xdc00 && codepoint < 0xe000)
+            {
+                read_low_sup = false;
                 continue;
-            no_complementary_print = true;
+            }
+            else
+            {
+                printf("unicode error!\n");
+                return;
+            }
+        }
+
+        if (codepoint >= 0xd800 && codepoint < 0xdc00)
+        {
+            read_low_sup = true;
             ascii_ish[i++] = (char)'?';
             continue;
         }
 
-        no_complementary_print = false;
-        
-        #if PRINTF_UNICODE_LAZY_ENDIAN
-            cur = lower;
-        #else
-            cur = upper;
-        #endif
-
+#if PRINTF_UNICODE_LAZY_ENDIAN
+        cur = lower;
+#else
+        cur = upper;
+#endif
         ascii_ish[i++] = (char)(cur > 0x7F ? '?' : cur);
     }
 
