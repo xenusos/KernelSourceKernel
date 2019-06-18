@@ -103,7 +103,7 @@ XENUS_EXPORT error_t dyn_list_get_by_index(dyn_list_head_p head, size_t index, v
     if (!head->buffer)
         return XENUS_ERROR_LIST_NO_BUFFER;
 
-    if (index > head->entries)
+    if (index >= head->entries)
         return XENUS_ERROR_LIST_INDEX_OUT_BOUNDS;
 
     if (entry)
@@ -153,7 +153,7 @@ XENUS_EXPORT error_t dyn_list_slice(dyn_list_head_p head, size_t index, size_t c
 
     if (index + cnt > head->entries)
         //cnt = head->entries - index;
-        return false;
+        return XENUS_ERROR_LIST_INDEX_OUT_BOUNDS;
 
     memmove((void *)(((uint8_t *)head->buffer) + (index * head->item_sizeof)),
             (void *)(((uint8_t *)head->buffer) + ((index + cnt) * head->item_sizeof)),
@@ -178,19 +178,24 @@ XENUS_EXPORT error_t dyn_list_splice(dyn_list_head_p head, size_t index, void **
         return XENUS_ERROR_LIST_NO_BUFFER;
 
     if (index >= head->item_slots)
-        return XENUS_ERROR_OUT_OF_RANGE;
-
-    if (head->entries + 1 > head->item_slots)
     {
         void * temp;
 
-        temp = realloc(head->buffer, (head->item_slots + LISTS_MIN_APPEND_SIZE) * head->item_sizeof);
+        size_t add;
+
+        add = index / LISTS_MIN_APPEND_SIZE; 
+        add *= LISTS_MIN_APPEND_SIZE;
+        add += LISTS_MIN_APPEND_SIZE; // expect floor
+
+        ASSERT(add > index, "array size (entries) should be greater than index");
+
+        temp = realloc(head->buffer, add * head->item_sizeof);
 
         if (!temp)
             return XENUS_ERROR_LIST_FAILED_TO_RESIZE_BUFFER;
 
         head->buffer = temp;
-        head->item_slots += LISTS_MIN_APPEND_SIZE;
+        head->item_slots = add;
     }
 
     item  = (void *)(((uint8_t *)head->buffer) + (index * head->item_sizeof));
@@ -199,7 +204,7 @@ XENUS_EXPORT error_t dyn_list_splice(dyn_list_head_p head, size_t index, void **
             item,
             (head->entries - index) * head->item_sizeof);
     
-    head->entries++;
+    head->entries = MAX(head->entries, index + 1);
 
     *new_entity = item;
 
