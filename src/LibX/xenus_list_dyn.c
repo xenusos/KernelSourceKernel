@@ -180,7 +180,6 @@ XENUS_EXPORT error_t dyn_list_splice(dyn_list_head_p head, size_t index, void **
     if (index >= head->item_slots)
     {
         void * temp;
-
         size_t add;
 
         add = index / LISTS_MIN_APPEND_SIZE; 

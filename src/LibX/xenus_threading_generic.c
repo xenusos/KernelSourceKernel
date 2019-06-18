@@ -391,6 +391,11 @@ static void XENUS_MS_ABI thread_destory(long exit)
     stack_realigner((size_t(*)(size_t))thread_destory_aligned, (size_t)exit);
 }
 
+static size_t thread_on_cpu_unaligned(size_t somewhat_safer)
+{
+    thread_on_cpu();
+}
+
 static size_t syscall_handler(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t arg_echo, bool is_task)
 {
     xenus_sys_cb_t callback;
@@ -404,8 +409,9 @@ static size_t syscall_handler(uint8_t id, size_t arg_alpha, size_t arg_bravo, si
         thread_fpu_lock();
 
     thread_enable_cleanup();
-
     sync_cache();
+
+    stack_realigner((size_t(*)(size_t))thread_on_cpu_unaligned, (size_t)NULL);
 
     callback = is_task ? tls_->pub_task_syscall_callback: tls_->pub_process_syscall_callback;
 
