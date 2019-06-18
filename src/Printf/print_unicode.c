@@ -11,20 +11,20 @@
 #include "print_unicode.h"
 
 #define READ_NEXT lower = *(strbuf++), upper = *(strbuf++)
-static int_t _strwlen(uint8_t * strbuf)
+static int_t _strwlen(const uint8_t * strbuf)
 {
     uint8_t lower, upper;
     uint_t ret;
     ret = 0;
-    for (READ_NEXT;  !(lower == 0 && upper == 0); READ_NEXT)
+    for (READ_NEXT; !(lower == 0 && upper == 0); READ_NEXT)
         ret++;
     return ret;
 }
 
 // We ABSOLUTELY CAN NOT do anything with unicode. we **must** use ascii only. the best we can do is strip out the ascii-chars and send them to not-so-std-out
-void xenus_printf_write_unicode(void * glhf, void *data, putc_f putf, printf_state_ref current, printf_write_all_t write)
+void xenus_printf_write_unicode(const void * glhf, void *data, putc_f putf, printf_state_ref current, printf_write_all_t write)
 {
-    uint8_t * strbuf;
+    const uint8_t * strbuf;
     char * ascii_ish;
     uint8_t lower, upper;
     bool read_low_sup;
@@ -55,7 +55,8 @@ void xenus_printf_write_unicode(void * glhf, void *data, putc_f putf, printf_sta
             }
             else
             {
-                printf("unicode error!\n");
+                current->str_write = "[unicode error]";
+                write(data, putf, current);
                 return;
             }
         }

@@ -75,7 +75,7 @@ void printf_write_string(const char * buffer, void *data, putc_f putf)
 uint_t printf_calc_length(printf_state_ref current)
 {
     uint_t ret;
-    char * buffer;
+    const char * buffer;
 
     ret       = 0;
     buffer    = current->buffer;
@@ -97,7 +97,7 @@ uint_t printf_calc_length(printf_state_ref current)
 void printf_write_all(void * data, putc_f putf, printf_state_ref current)
 {
     uint_t remaining_spaces;
-    char *buffer;
+    const char *buffer;
 
     remaining_spaces    = MAX(0, (int_t)current->width - (int_t)printf_calc_length(current));
     buffer              = current->buffer;

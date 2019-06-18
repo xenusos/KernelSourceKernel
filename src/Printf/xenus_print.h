@@ -44,7 +44,11 @@ typedef struct printf_state_s
     int_t  width;
     char   sign;
     uint_t base;
-    char *buffer;                
+    union
+    {
+        char * buffer;
+        const char * str_write; // EVIL!!
+    };
 } * printf_state_p,
   * printf_state_ref,
     printf_state_t;
@@ -52,8 +56,8 @@ typedef struct printf_state_s
 typedef void (*printf_write_all_t)(void *data, putc_f putf, printf_state_ref current);
 typedef struct printf_interface_s
 {
-    bool(*printf_check_string)            (char * str);
-    void(*printf_write_unicode)            (void * glhf, void *data, putc_f putf, printf_state_ref current, printf_write_all_t write);
+    bool(*printf_check_string)            (const char * str);
+    void(*printf_write_unicode)           (const void * glhf, void *data, putc_f putf, printf_state_ref current, printf_write_all_t write);
     void(*printf_write_floatpoint)        (safe_double_ref d, int_t places, void *data, putc_f putf, printf_state_ref current, printf_write_all_t write);
 } * printf_interface_p,
   * printf_interface_ref,
