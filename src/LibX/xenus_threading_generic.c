@@ -7,10 +7,11 @@
 #include <kernel/libx/xenus_threads.h>        // predecleration of public apis
 
 #include "../Boot/access_system.h"            // deps
-
-#include <kernel/libx/xenus_chain.h>        // deps
-#include <kernel/libx/xenus_list_dyn.h>        // deps
-#include <kernel/libx/xenus_memory.h>        // deps
+ 
+#include <kernel/libx/xenus_chain.h>          // deps
+#include <kernel/libx/xenus_list_dyn.h>       // deps
+#include <kernel/libx/xenus_memory.h>         // deps
+#include <kernel/libx/xenus_list_linked.h>    // deps
 
 #include "../StackFixup/stack_realigner.h"
 
@@ -24,7 +25,9 @@ typedef struct
 extern void _ReadWriteBarrier(void);
 extern void __faststorefence(void);
 
-static thread_enter_cpu_p on_cpu_callback = NULL;
+static linked_list_head_p on_cpu_callbacks = 0;
+static mutex_k on_cpu_mutex = 0;
+
 static chain_p hack_exit_ntfy = 0;
 static mutex_k hack_mutex = 0;
 
@@ -45,6 +48,7 @@ XENUS_EXPORT error_t thread_create(task_k * out_task, thread_callback_t callback
 
     if (!name)
         name = "Unnammed Xenus Thread";
+    linked_list_create();
 
     thread_data = malloc(sizeof(thread_data_t));
 
@@ -262,18 +266,42 @@ XENUS_EXPORT void thread_enable_cleanup()
     tls()->kern_thread_exit = thread_destory;
 }
 
-XENUS_EXPORT void thread_set_on_cpu_cb(thread_enter_cpu_p callback)
+XENUS_EXPORT void thread_add_on_cpu_cb(thread_enter_cpu_p callback)
 {
-    on_cpu_callback = callback;
+    linked_list_entry_p entry;
+    
+    mutex_lock(on_cpu_mutex);
+    entry = linked_list_append(on_cpu_callbacks, sizeof(thread_enter_cpu_p));
+    mutex_unlock(on_cpu_mutex);
+
+    if (!entry)
+        return;
+
+    *(thread_enter_cpu_p *)entry->data = callback;
 }
 
 XENUS_EXPORT void thread_on_cpu()
 {
     // dont waste time w/ a context switch if we're doing on switch stuff
     thread_preempt_lock();
-    if (on_cpu_callback)
-        on_cpu_callback();
+
+    for (linked_list_entry_p entry = on_cpu_callbacks->bottom; entry; entry = entry->next)
+    {
+        thread_enter_cpu_p callback = *(thread_enter_cpu_p *)entry->data;
+        
+        if (!callback)
+            continue;
+
+        callback();
+    }
+
     thread_preempt_unlock();
+}
+
+void xlib_generic_init()
+{
+    on_cpu_mutex = mutex_init();
+    on_cpu_callbacks = linked_list_create();
 }
 
 XENUS_EXPORT error_t threading_get_exit_callbacks(thread_exit_cb_t ** list, int * cnt)

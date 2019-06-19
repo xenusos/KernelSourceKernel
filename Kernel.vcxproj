@@ -20,6 +20,7 @@
     <ClCompile Include="src\LibX\xenus_debug.c" />
     <ClCompile Include="src\LibX\xenus_threading_tls_containers.c" />
     <ClCompile Include="src\LibX\xenus_threading_tls_indexing.c" />
+    <ClCompile Include="src\LibX\xlib_start.c" />
     <ClCompile Include="src\PE\pe_loader.c" />
     <ClCompile Include="src\Printf\print_floating.c" />
     <ClCompile Include="src\Printf\print_strchk.c" />
@@ -51,6 +52,8 @@
     <ClInclude Include="src\Boot\stage_zero.h" />
     <ClInclude Include="src\Core\core_loader.h" />
     <ClInclude Include="src\LibX\xenus_debug.h" />
+    <ClInclude Include="src\LibX\xenus_threading_generic.h" />
+    <ClInclude Include="src\LibX\xlib_start.h" />
     <ClInclude Include="src\Printf\print_floating.h" />
     <ClInclude Include="src\Printf\print_strchk.h" />
     <ClInclude Include="src\Printf\print_unicode.h" />

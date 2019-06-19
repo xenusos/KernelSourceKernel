@@ -24,10 +24,10 @@ XENUS_EXPORT linked_list_entry_p linked_list_append(linked_list_head_p head, siz
     if (!entry)
         goto error;
 
-    entry->next                = 0;
+    entry->next              = 0;
     entry->before            = head->top;
-    entry->head                = head;
-    entry->end_of_struct    = (void*)((uint8_t*)entry + sizeof(linked_list_entry_t));
+    entry->head              = head;
+    entry->end_of_struct     = (void*)((uint8_t*)entry + sizeof(linked_list_entry_t));
     head->length++;
     
     if (!head->bottom)

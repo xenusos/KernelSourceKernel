@@ -25,9 +25,7 @@ START_POINT(stage_one)
     if (ERROR(ps_buffer_configure(port_structs, port_structs_length)))
         return STAGE_ONE_ERR;
 
-    //xlib_start();        - no longer present.
-    // TODO: bring back xlib_start
-    xlib_dbg_init();
+    xlib_init();
 
     //printf_allow_xlib(); - no longer present.
     pe_loader_init();

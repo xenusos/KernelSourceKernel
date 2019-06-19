@@ -5,4 +5,4 @@
 */
 #pragma once
 
-extern void xlib_dbg_init();
+extern void xlib_init();
