@@ -199,9 +199,12 @@ XENUS_EXPORT error_t dyn_list_splice(dyn_list_head_p head, size_t index, void **
 
     item  = (void *)(((uint8_t *)head->buffer) + (index * head->item_sizeof));
 
-    memmove((void *)(((uint8_t *)head->buffer) + ((index + 1) * head->item_sizeof)),
+    if (head->entries > index)
+    {
+        memmove((void *)(((uint8_t *)head->buffer) + ((index + 1) * head->item_sizeof)),
             item,
             (head->entries - index) * head->item_sizeof);
+    }
     
     head->entries = MAX(head->entries, index + 1);
 
