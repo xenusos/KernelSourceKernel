@@ -269,8 +269,11 @@ XENUS_EXPORT void thread_set_on_cpu_cb(thread_enter_cpu_p callback)
 
 XENUS_EXPORT void thread_on_cpu()
 {
+    // dont waste time w/ a context switch if we're doing on switch stuff
+    thread_preempt_lock();
     if (on_cpu_callback)
         on_cpu_callback();
+    thread_preempt_unlock();
 }
 
 XENUS_EXPORT error_t threading_get_exit_callbacks(thread_exit_cb_t ** list, int * cnt)
