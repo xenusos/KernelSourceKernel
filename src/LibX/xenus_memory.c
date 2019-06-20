@@ -83,7 +83,7 @@ static bool _linux_alloc(bool atomic, size_t length, void ** out, size_t * actua
     if ((length >= 4096) && (!atomic))
         goto alt_alloc;
 
-    buffer = kmalloc(length, (atomic ? GFP_ATOMIC : 0) | GFP_KERNEL);
+    buffer = kmalloc(length, atomic ? GFP_ATOMIC :  GFP_KERNEL);
 
     if (buffer)
     {
