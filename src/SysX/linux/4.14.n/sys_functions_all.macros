@@ -461,3 +461,6 @@ ADD_FUNCTION_3(do_pkey_alloc)
 ADD_FUNCTION_4(ioremap_page_range)
 // pat start. 
 ADD_FUNCTION_3(kernel_map_sync_memtype)
+// cpu start. 
+ADD_FUNCTION_1(xenus_util_get_gs)
+ADD_FUNCTION_0(xenus_util_get_cpuid)
