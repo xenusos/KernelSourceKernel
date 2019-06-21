@@ -68,9 +68,28 @@ static error_t loader_load_from_csv(const char * str, uint_t length)
 
 static error_t loader_load_from_file()
 {
-    const char * test = "LibOS, LibOS.XSYS, /Xenus/Kernel/LibOS.XSYS\n"
-                        "SelfTestModule, SelfTest.XSYS, /Xenus/Kernel/Plugins/SelfTest.XSYS";
-    loader_load_from_csv(test, 111);
+    error_t err;
+    size_t fs;
+    void * buf;
+    void * hd;
+
+    fs = file_length(BOOTSTRAP_CSV);
+    ASSERT(fs, "file size of " BOOTSTRAP_CSV " was zero");
+
+    buf = malloc(fs);
+    if (!buf)
+        return XENUS_ERROR_OUT_OF_MEMORY;
+
+    hd = file_open_readonly(BOOTSTRAP_CSV);
+    if (!hd)
+        return XENUS_ERROR_INTERNAL_ERROR;
+
+    file_read(hd, 0, buf, fs);
+    file_close(hd);
+
+    loader_load_from_csv((const char *)buf, fs);
+    
+    free(buf);
     return XENUS_OKAY;
 }
 
