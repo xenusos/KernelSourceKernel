@@ -185,8 +185,15 @@ error_t dyncb_allocate_stub(void * msft, uint8_t parameters, void * data, sysv_f
 error_t dyncb_free_stub(void * handle)
 {
     dyncb_struct_p dyncb;
+
     dyncb = handle;
-    execfree(dyncb->stub_aligned);
+
+    if (!handle)
+        return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
+
+    if (dyncb->stub_aligned)
+        execfree(dyncb->stub_aligned);
+    
     free(dyncb);
     return XENUS_OKAY;
 }
