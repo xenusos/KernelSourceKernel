@@ -117,9 +117,10 @@ error_t pe_loader_preload_init(const void * buffer, size_t length, const char * 
     if (!name)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    mod_len = strnlen(name, PE_MAX_MODULE_LENGTH - C_NULL_CHAR);
+    mod_len = strnlen(name, PE_MAX_MODULE_LENGTH);
 
-    if ((mod_len == 0) || (mod_len == PE_MAX_MODULE_LENGTH - C_NULL_CHAR))
+    if ((mod_len == 0) || 
+        (mod_len == PE_MAX_MODULE_LENGTH))
         return XENUS_ERROR_MODULE_NAME_TOO_LONG;
 
     entry = linked_list_append(module_list, sizeof(module_t));
@@ -141,7 +142,7 @@ error_t pe_loader_preload_init(const void * buffer, size_t length, const char * 
     element->not_loaded.buffer = saved_pe;
     element->not_loaded.length = length;
 
-    memcpy(element->name, name, mod_len + C_NULL_CHAR);
+    memcpy(element->name, name, mod_len);
 
     memcpy(saved_pe, buffer, length);
 
@@ -395,9 +396,9 @@ error_t pe_loader_find_symbol_bymodname(const char * module, uint16_t ord, const
     if (!name)
         name = "NULL_SYMBOL";
 
-    len = strnlen(module, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
+    len = strnlen(module, PE_MAX_SYMBOL_LENGTH);
 
-    if ((len == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+    if ((len == PE_MAX_SYMBOL_LENGTH) || 
         (len == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
@@ -406,7 +407,8 @@ error_t pe_loader_find_symbol_bymodname(const char * module, uint16_t ord, const
     if (!mod)
         return XENUS_ERROR_MODULE_NOT_YET_LOADED;
 
-    if (ERROR(err = pe_loader_find_symbol_bymodhandle(mod, ord, name, byordinal, &func)))
+    err = pe_loader_find_symbol_bymodhandle(mod, ord, name, byordinal, &func);
+    if (ERROR(err))
         return err;
 
     if (!func)
@@ -429,14 +431,14 @@ error_t pe_loader_alias(const char * target, const char * dest)
     if (!dest)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    len_target = strnlen(target, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
-    len_dest   = strnlen(dest, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
+    len_target = strnlen(target, PE_MAX_SYMBOL_LENGTH);
+    len_dest   = strnlen(dest, PE_MAX_SYMBOL_LENGTH);
 
-    if ((len_dest == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+    if ((len_dest == PE_MAX_SYMBOL_LENGTH) || 
         (len_dest == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
-    if ((len_target == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+    if ((len_target == PE_MAX_SYMBOL_LENGTH) || 
         (len_target == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
@@ -447,8 +449,8 @@ error_t pe_loader_alias(const char * target, const char * dest)
 
     redir = (mod_redir_p) entry->data;
 
-    memcpy(redir->from, target, len_target + C_NULL_CHAR);
-    memcpy(redir->to, dest, len_dest + C_NULL_CHAR);
+    memcpy(redir->from, target, len_target);
+    memcpy(redir->to, dest, len_dest);
     return XENUS_OKAY;
 }
 
@@ -468,9 +470,9 @@ error_t pe_loader_postload_iat_add_symbol_byname(pe_handle_h handle, const char 
     if (!replacement)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    len = strnlen(symbol, PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR);
+    len = strnlen(symbol, PE_MAX_SYMBOL_LENGTH);
 
-    if ((len == PE_MAX_SYMBOL_LENGTH - C_NULL_CHAR) || 
+    if ((len == PE_MAX_SYMBOL_LENGTH) || 
         (len == 0))
         return XENUS_ERROR_ILLEGAL_BUF_LENGTH;
 
@@ -486,7 +488,7 @@ error_t pe_loader_postload_iat_add_symbol_byname(pe_handle_h handle, const char 
 
     redir = (sym_redir_p)entry->data;
 
-    memcpy(redir->symbol, symbol, len + C_NULL_CHAR);
+    memcpy(redir->symbol, symbol, len);
 
     redir->data = replacement;
     return XENUS_OKAY;
