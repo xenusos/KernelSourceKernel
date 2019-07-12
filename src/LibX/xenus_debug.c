@@ -64,4 +64,7 @@ __declspec(noreturn) void  panicf(const char *fmt, ...)
 void xlib_dbg_init()
 {
     mutex = mutex_init();
+
+    if (!mutex)
+        panic("xdbg_init couldn't allocate printf mutex");
 }

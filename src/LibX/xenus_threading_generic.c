@@ -302,7 +302,9 @@ XENUS_EXPORT void thread_on_cpu()
 void xlib_generic_init()
 {
     on_cpu_mutex = mutex_init();
+    ASSERT(on_cpu_mutex, "couldn't allocate mutex");
     on_cpu_callbacks = linked_list_create();
+    ASSERT(on_cpu_callbacks, "couldn't allocate array");
 }
 
 XENUS_EXPORT error_t threading_get_exit_callbacks(thread_exit_cb_t ** list, int * cnt)
