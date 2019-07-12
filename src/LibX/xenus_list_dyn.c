@@ -141,7 +141,7 @@ XENUS_EXPORT error_t dyn_list_get_by_buffer(dyn_list_head_p head, void * entry, 
         }
     }
 
-    return XENUS_STATUS_LISTS_NOT_FOUND;
+    return XENUS_ERROR_LISTS_NOT_FOUND;
 }
 
 XENUS_EXPORT error_t dyn_list_slice(dyn_list_head_p head, size_t index, size_t cnt)
