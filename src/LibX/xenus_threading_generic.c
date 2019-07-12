@@ -93,7 +93,8 @@ error_t threading_ntfy_singleshot_exit(uint32_t pid, thread_exit_hack_t cb)
 
     mutex_lock(hack_mutex);
 
-    if ((er = chain_allocate_link(hack_exit_ntfy, pid, sizeof(thread_exit_hack_t *), NULL, NULL, (void**)&ptr)) != XENUS_OKAY)
+    er = chain_allocate_link(hack_exit_ntfy, pid, sizeof(thread_exit_hack_t *), NULL, NULL, (void**)&ptr);
+    if (ERROR(er))
         goto exit;
 
     *ptr = cb;
@@ -370,6 +371,7 @@ static void XENUS_MS_ABI trap_kp_thread_attention_callback(uint8_t id, pt_regs_p
 
 static void thread_hack_ntfy(long exit)
 {
+    error_t err;
     link_p link;
     thread_exit_hack_t * ptr;
     thread_exit_hack_t cb;
@@ -379,7 +381,8 @@ static void thread_hack_ntfy(long exit)
 
     mutex_lock(hack_mutex);
 
-    if (chain_get(hack_exit_ntfy, thread_geti(), &link, (void **)&ptr) == XENUS_OKAY)
+    err = chain_get(hack_exit_ntfy, thread_geti(), &link, (void **)&ptr);
+    if (NO_ERROR(err))
     {
         cb = *ptr;
         chain_deallocate_handle(link);
@@ -410,6 +413,7 @@ static void thread_destory_aligned(long exit)
     for (int i = 0; i < XENUS_PUB_THREAD_EXIT_CBS; i++)
         if (tls_->pub_thread_exit[i])
             tls_->pub_thread_exit[i](exit);
+ 
 
     _thread_tls_cleanup_all();
 

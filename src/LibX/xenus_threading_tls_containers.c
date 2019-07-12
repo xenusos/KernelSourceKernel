@@ -82,10 +82,14 @@ XENUS_SYM error_t     _thread_tls_get(uint64_t type, uint64_t hash, void ** out_
 error_t _thread_tls_cleanup(uint64_t type)
 {
     bst_p container;
+    bst_p * pcontainer;
 
-    if (!(container = *tls_get_container(type)))
+    pcontainer = tls_get_container(type);
+
+    if (!(container = *pcontainer))
         return XENUS_ERROR_CONTAINER_NOT_FOUND;
-    
+    *pcontainer = NULL;
+
     return bst_destory(container);
 }
 
