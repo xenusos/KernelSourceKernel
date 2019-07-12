@@ -6,10 +6,10 @@
 #include <xenus.h>                            // int types, common types, etc
 #include <kernel/libx/xenus_threads.h>        // predecleration of public apis
 
-#include <kernel/libx/xenus_chain.h>        // deps
-#include <kernel/libx/xenus_list_dyn.h>        // deps
-#include <kernel/libx/xenus_memory.h>        // deps
-#include "../Boot/access_system.h"                    // deps
+#include <kernel/libx/xenus_chain.h>          // deps
+#include <kernel/libx/xenus_list_dyn.h>       // deps
+#include <kernel/libx/xenus_memory.h>         // deps
+#include "../Boot/access_system.h"            // deps
 
 
 XENUS_SYM error_t thread_indexing_create(uint_t max_threads, thread_index_counter_p * tic)
@@ -114,7 +114,7 @@ XENUS_SYM error_t thread_indexing_get(thread_index_counter_p tic, size_t * index
 
     mutex_lock(tic->mutex);
     ret = dyn_list_get_by_buffer((dyn_list_head_p)tic->list, &id, index);
-    if (ret == XENUS_STATUS_LISTS_NOT_FOUND) //we need to treat a non-existent link as an error
+    if (ret == XENUS_ERROR_LISTS_NOT_FOUND) //we need to treat a non-existent link as an error
         ret = XENUS_ERROR_TLS_NOT_REGISTERED;
     mutex_unlock(tic->mutex);
     return ret;
