@@ -50,7 +50,6 @@ XENUS_EXPORT error_t _thread_tls_allocate(uint64_t type, uint64_t hash, size_t l
         if (ERROR(err))
             return err;
     }
-
     
     return bst_allocate_node(*container, hash, length, NULL, (node_p *)out_handle, out_buffer);
 }

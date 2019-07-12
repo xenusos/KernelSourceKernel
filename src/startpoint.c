@@ -12,20 +12,22 @@
 
 START_POINT(StartPoint)
 {
-    ssize_t err;
+    ssize_t err = 0;
 
-    err = 0;
-
-    if (err = stage_zero(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info))
+    err = stage_zero(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info);
+    if (err)
         return -err;
 
-    if (err = stage_one(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info))
+    err = stage_one(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info);
+    if (err)
         return -err;
 
-    if (err = stage_two(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info))
+    err = stage_two(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info);
+    if (err)
         return -err;
 
-    if (err = stage_three(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info))
+    err = stage_three(xenos_start, bootstrap, security, sec_len, port_structs, port_structs_length, info);
+    if (err)
         return -err;
 
     return err;
