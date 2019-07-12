@@ -55,13 +55,16 @@ static error_t xenus_load_module(const char * friendly_name, const char * mod, c
             mod, 
             path);
 
-    if (!(file_hd = file_open_readonly(path)))    
+    file_hd = file_open_readonly(path);
+    if (!(file_hd))
         return XENUS_ERROR_NTOS_NOT_FOUND;
 
-    if (!(fs = file_length(path)))                
+    fs = file_length(path);
+    if (!(fs))                
         return XENUS_ERROR_NTOS_RD_ERR;
 
-    if (!(buf = malloc(fs)))                    
+    buf = malloc(fs);
+    if (!(buf))                    
         return XENUS_ERROR_OUT_OF_MEMORY;
 
     fread = file_read(file_hd, 0, buf, fs);
@@ -69,7 +72,8 @@ static error_t xenus_load_module(const char * friendly_name, const char * mod, c
     if (fread != (int_t)fs && fread > 0)
         return XENUS_ERROR_NTOS_RD_ERR;
 
-    if (ERROR(err = pe_loader_load(buf, fs, mod, &pe_hd)))
+    err = pe_loader_load(buf, fs, mod, &pe_hd);
+    if (ERROR(err))
     {
         printf("%s failed to load: %i \n", 
             friendly_name,
@@ -77,7 +81,8 @@ static error_t xenus_load_module(const char * friendly_name, const char * mod, c
         goto err_s;
     }
 
-    if (ERROR(err = pe_loader_postload_config_reloc(pe_hd)))
+    err = pe_loader_postload_config_reloc(pe_hd);
+    if (ERROR(err))
     {
         printf("%s failed to relocate: %i \n",
             friendly_name, 
@@ -109,7 +114,8 @@ static error_t _plugins_load_call_ep(pe_handle_h module, xenus_entrypoint_ctx_t 
     if (!data)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
-    if (ERROR(err = pe_loader_get_headers(module, &base, &headers, NULL, NULL)))
+    err = pe_loader_get_headers(module, &base, &headers, NULL, NULL);
+    if (ERROR(err))
         return err;
 
     ep_addr = headers->OptionalHeader64.AddressOfEntryPoint;
@@ -223,14 +229,16 @@ static error_t plugins_iterative_load(linked_list_head_p list, const char * mod,
         if (dep_data->soft_dependency)
             plugin_module->has_soft_deps = true;
 
-        if (dependency = _plugins_get_handle(list, dep_data->module))
+        dependency = _plugins_get_handle(list, dep_data->module);
+        if (dependency)
         {
             dep_data->pe_handle        = dependency->ep.static_data->pe_handle;
             dep_data->plugin_handle    = dependency->ep.static_data->plugin_handle;
             continue;
         }
 
-        if (ERROR(ret = plugins_iterative_load(list, dep_data->module, dep_data->name, dep_data->path, dep_data->soft_dependency, &dep_data->pe_handle, &dep_data->plugin_handle)))
+        ret = plugins_iterative_load(list, dep_data->module, dep_data->name, dep_data->path, dep_data->soft_dependency, &dep_data->pe_handle, &dep_data->plugin_handle);
+        if (ERROR(ret))
         {
             if (dep_data->soft_dependency)
                 plugin_module->has_missing_dep_soft = true;
@@ -258,19 +266,22 @@ static error_t _plugins_init_iat(module_ctx_p mod_data, size_t * o_resolved, siz
     handle = mod_data->handle;
     err = XENUS_OKAY;
 
-    if (ERROR(err = pe_loader_postload_get_iat_length(handle, &iat_state.list_size)))
+    err = pe_loader_postload_get_iat_length(handle, &iat_state.list_size);
+    if (ERROR(err))
     {
         printf("Failed to enumerate iat for module %s \n", mod_data->name);
         goto err;
     }
 
-    if (!(iat_state.list = calloc(iat_state.list_size, sizeof(iat_patch_entry_t))))
+    iat_state.list = calloc(iat_state.list_size, sizeof(iat_patch_entry_t));
+    if (!(iat_state.list))
     {
         err = XENUS_ERROR_OUT_OF_MEMORY;
         goto err;
     }
 
-    if (ERROR(err = pe_loader_postload_config_iat_new(handle, &iat_state)))
+    err = pe_loader_postload_config_iat_new(handle, &iat_state);
+    if (ERROR(err))
     {
         printf("Failed to patch module: %s. This shouldn't be possible! \n", mod_data->name);
         goto err;
@@ -375,7 +386,8 @@ static error_t _plugins_exec_init(module_ctx_p handle)
     error_t er;
     c_bool failed;
 
-    if (ERROR(er = plugins_get_state(handle)))
+    er = plugins_get_state(handle);
+    if (ERROR(er))
         return er;
 
     if (handle->ep.static_data->ep_called)
@@ -398,7 +410,8 @@ static error_t _plugins_exec_start(module_ctx_p mod_data)
     int status;
     error_t er;
 
-    if (ERROR(er = plugins_get_state((plugin_handle_h)mod_data)))
+    er = plugins_get_state((plugin_handle_h)mod_data);
+    if (ERROR(er))
         return er;
 
     if (mod_data->ep.static_data->has_started)
@@ -417,6 +430,8 @@ static error_t _plugins_exec_start(module_ctx_p mod_data)
 
 static void _plugins_init_pl_iat_patchers(linked_list_head_p list)
 {
+    error_t err;
+
     printf("Loading IAT-adjusted plugins...");
 
     for (linked_list_entry_t * item = list->bottom; item != NULL; item = item->next)
@@ -429,7 +444,8 @@ static void _plugins_init_pl_iat_patchers(linked_list_head_p list)
         if (!mod_data->ep.iat_hook)
             continue;
 
-        if (ERROR(_plugins_tryinit_iat(mod_data, &resolved, &unresolved, &percent)))
+        err = _plugins_tryinit_iat(mod_data, &resolved, &unresolved, &percent);
+        if (ERROR(err))
         {
             printf(" %s IAT ERROR\n", mod_data->name);
             mod_data->has_hard_error = true;
@@ -443,6 +459,8 @@ static void _plugins_init_pl_iat_patchers(linked_list_head_p list)
 
 static void _plugins_init_pl_iat(linked_list_head_p list)
 {
+    error_t err;
+
     printf("Fixing up plugins import tables...");
 
     for (linked_list_entry_t * item = list->bottom; item != NULL; item = item->next)
@@ -452,7 +470,8 @@ static void _plugins_init_pl_iat(linked_list_head_p list)
 
         mod_data = (module_ctx_p)item->data;
 
-        if (ERROR(_plugins_tryinit_iat(mod_data, &resolved, &unresolved, &percent)))
+        err = _plugins_tryinit_iat(mod_data, &resolved, &unresolved, &percent);
+        if (ERROR(err))
         {
             printf(" %s IAT ERROR\n", mod_data->name);
             mod_data->has_hard_error = true;
@@ -466,12 +485,12 @@ static void _plugins_init_pl_iat(linked_list_head_p list)
 static void _plugins_init_pl_init(linked_list_head_p list)
 {
     printf("Signaling plugins to initialize...");
+
     for (linked_list_entry_t * item = list->bottom; item != NULL; item = item->next)
     {
         error_t err;
         module_ctx_p mod_data;
         mod_data = (module_ctx_p)item->data;
-
 
         if (ERROR(err = _plugins_exec_init(mod_data)))
         {
@@ -486,16 +505,18 @@ static void _plugins_init_pl_init(linked_list_head_p list)
 
 static void _plugins_init_pl_start(linked_list_head_p list)
 {
+    error_t err;
+
     printf("Passing execution to plugins...");
 
     for (linked_list_entry_t * item = list->bottom; item != NULL; item = item->next)
     {
-        error_t err;
         module_ctx_p mod_data;
 
         mod_data = (module_ctx_p)item->data;
 
-        if (ERROR(err = _plugins_exec_start(mod_data)))
+        err = _plugins_exec_start(mod_data);
+        if (ERROR(err))
         {
             printf(" %-15s, failed to start %zx\n", mod_data->name, err);
         }

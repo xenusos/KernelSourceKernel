@@ -29,7 +29,6 @@ typedef struct bst_s
 
 #include <kernel/libx/xenus_bst.h>
 
-
 XENUS_SYM error_t bst_allocate(bst_p * chain)
 {
     bst_p alloc;

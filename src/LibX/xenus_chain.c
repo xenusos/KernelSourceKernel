@@ -102,16 +102,16 @@ XENUS_EXPORT error_t chain_get(
 
     for (link_t * current = chain->bottom; current != NULL; current = current->next)
     {
-        if (current->hash == hash)
-        {
-            if (out_buffer)
-                *out_buffer = current->_buf;
+        if (current->hash != hash)
+            continue;
+         
+        if (out_buffer)
+            *out_buffer = current->_buf;
 
-            if (out_link_handle)
-                *out_link_handle = current;
+        if (out_link_handle)
+            *out_link_handle = current;
 
-            return XENUS_OKAY;
-        }
+        return XENUS_OKAY;
     }
     return XENUS_ERROR_LINK_NOT_FOUND;
 }
