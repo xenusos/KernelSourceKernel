@@ -62,6 +62,7 @@ ADD_FUNCTION_0(cpu, _current);
 ADD_FUNCTION_0(cpu, tls);
 ADD_FUNCTION_0(cpu, preempt_enable);
 ADD_FUNCTION_0(cpu, preempt_disable);
+ADD_FUNCTION_0(cpu, preempt_enable_reseched);
 
 ADD_FUNCTION_12(fio, file_open);
 ADD_FUNCTION_12(fio, file_open_readonly);

@@ -6,6 +6,7 @@
 #include <xenus.h>
 #include <kernel/libx/xenus_memory.h>
 #include <kernel/libx/xenus_dbg.h>
+#include <kernel/libx/xenus_threads.h>
 #include "../Boot/access_system.h"
 #include "xenus_debug.h"
 
@@ -17,7 +18,8 @@ l_int puts(const char * str)
     l_int ret;
     size_t copy_len = strlen(str) + 1;
 
-    mutex_lock(mutex);
+    while (!mutex_trylock(mutex))
+        thread_pause();
 
     memcpy(line_buffer, str, copy_len);
     (*(uint16_t*)(((uint64_t)line_buffer) + copy_len)) = *(uint16_t*)("\n\00");
@@ -34,7 +36,8 @@ l_int printf(const char *fmt, ...)
     size_t length;
     l_int ret;
 
-    mutex_lock(mutex);
+    while (!mutex_trylock(mutex))
+        thread_pause();
 
     va_start(ap, fmt);
 
