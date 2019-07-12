@@ -119,7 +119,7 @@ XENUS_EXPORT error_t bst_get(
 
     node = bst_search_recursive(chain->top, hash);
     if (!node)
-        return XENUS_ERROR_LINK_NOT_FOUND;
+        return XENUS_ERROR_BST_NOT_NOT_FOUND;
 
     if (out_buffer)
         *out_buffer = node->buffer;
