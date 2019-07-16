@@ -3,6 +3,8 @@
     Author: Reece W. 
     License: All Rights Reserved J. Reece Wilson
 */  
+#define FORCE_PORTABLE_STRUCTS
+
 #include <xenus.h>                            // int types, common types, etc
 #include <kernel/libx/xenus_threads.h>        // predecleration of public apis
 
@@ -14,6 +16,7 @@
 #include <kernel/libx/xenus_list_linked.h>    // deps
 
 #include "../StackFixup/stack_realigner.h"
+
 
 typedef struct
 {
@@ -118,6 +121,17 @@ XENUS_EXPORT void thread_preempt_unlock()
 #define XENUS_THREAD_TLS_START    thread_storage_data_p tls_; thread_preempt_lock(); tls_ = tls();
 #define XENUS_THREAD_TLS_END      thread_preempt_unlock();
 
+static thread_storage_data_p bad_practice_get_leader_tls() 
+{
+    // TODO: figure something out
+    // we normally condemn portable type usage at this stage
+    void * this = _current();
+    void * tsk = task_get_group_leader_size_t(this);
+    if (!tsk)
+        tsk = this;
+    return task_get_xenus(tsk);
+}
+
 XENUS_EXPORT uint32_t thread_geti()
 {
     uint64_t ret;
@@ -212,52 +226,42 @@ XENUS_EXPORT bool thread_fpu_unlock()
 
 XENUS_EXPORT void thread_pre_context_switch_hook(pre_context_switch_cb_t xd)
 {
-    XENUS_THREAD_TLS_START
-
+    thread_storage_data_p tls_ = tls();
     __try_install_switch_hooks(tls_);
     tls_->pub_switch_pre_callback = xd;
-
-    XENUS_THREAD_TLS_END
 }
 
 XENUS_EXPORT void thread_post_context_switch_hook(post_context_switch_cb_t xd)
 {
-    XENUS_THREAD_TLS_START
-
+    thread_storage_data_p tls_ = tls();
     __try_install_switch_hooks(tls_);
     tls_->pub_switch_post_callback = xd;
-
-    XENUS_THREAD_TLS_END
 }
 
 XENUS_EXPORT void threading_set_current_trap_handler(xenus_trap_cb_t handler)
 {
-    thread_storage_data_p tls_;
-    tls_ = tls();
+    thread_storage_data_p tls_ = tls();
     tls_->pub_task_thread_attention_callback = handler;
     tls_->trap_kt_thread_attention_callback = trap_kt_thread_attention_callback;
 }
 
 XENUS_EXPORT void threading_set_process_trap_handler(xenus_trap_cb_t handler)
 {
-    thread_storage_data_p tls_;
-    tls_ = tls();
+    thread_storage_data_p tls_ = bad_practice_get_leader_tls();
     tls_->pub_process_thread_attention_callback = handler;
     tls_->trap_kp_thread_attention_callback = trap_kp_thread_attention_callback;
 }
 
 XENUS_EXPORT void threading_set_current_syscall_handler(xenus_sys_cb_t handler)
 {
-    thread_storage_data_p tls_;
-    tls_ = tls();
+    thread_storage_data_p tls_ = tls();
     tls_->pub_task_syscall_callback = handler;
     tls_->syscall_kt_attention_callback = syscall_kt_attention_callback;
 }
 
 XENUS_EXPORT void threading_set_process_syscall_handler(xenus_sys_cb_t handler)
 {
-    thread_storage_data_p tls_;
-    tls_ = tls();
+    thread_storage_data_p tls_ = bad_practice_get_leader_tls();
     tls_->pub_process_syscall_callback = handler;
     tls_->syscall_kp_attention_callback = syscall_kp_attention_callback;
 }
@@ -265,6 +269,7 @@ XENUS_EXPORT void threading_set_process_syscall_handler(xenus_sys_cb_t handler)
 XENUS_EXPORT void thread_enable_cleanup()
 {
     tls()->kern_thread_exit = thread_destory;
+    bad_practice_get_leader_tls()->kern_thread_exit = thread_destory;
 }
 
 XENUS_EXPORT void thread_add_on_cpu_cb(thread_enter_cpu_p callback)
@@ -346,10 +351,10 @@ static void trap_handler(uint8_t id, pt_regs_p registers, bool is_task)
 
     if (mng_fpu)
         thread_fpu_lock();
-
+    
     sync_cache();
 
-    callback             = is_task ? tls_->pub_task_thread_attention_callback : tls_->pub_process_thread_attention_callback;
+    callback             = is_task ? tls_->pub_task_thread_attention_callback : bad_practice_get_leader_tls()->pub_process_thread_attention_callback;
 
     trap.attention_id    = id;
     trap.registers       = registers;
@@ -450,7 +455,7 @@ static size_t syscall_handler(uint8_t id, size_t arg_alpha, size_t arg_bravo, si
 
     stack_realigner((size_t(*)(size_t))thread_on_cpu_unaligned, (size_t)NULL);
 
-    callback = is_task ? tls_->pub_task_syscall_callback: tls_->pub_process_syscall_callback;
+    callback = is_task ? tls_->pub_task_syscall_callback : bad_practice_get_leader_tls()->pub_process_syscall_callback;
 
     trap.attention_id = id;
     trap.arg_alpha    = arg_alpha;

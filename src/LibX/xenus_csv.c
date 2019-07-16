@@ -4,6 +4,7 @@
     License: All Rights Reserved J. Reece Wilson
 */
 #include <xenus.h>
+#include <boot/access_system.h> 
 #include <kernel/libx/xenus_csv.h>
 
 #define CSV_EOF_OFFSET 0xFFFFFFFF
