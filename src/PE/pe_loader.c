@@ -1,7 +1,7 @@
 /*
     Purpose:
     Author: Reece W.
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
     Notes: TODO: look over every strlen, memcpy, and memset.
            a lot of work needs to be done here
 */

@@ -1,7 +1,7 @@
 /*
     Purpose: Stage 3 protection-ish against some null pointer dereferences and/or the printing of bad strings 
     Author: Reece W. 
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
 */  
 #include <xenus.h>
 #include "print_strchk.h"

@@ -1,7 +1,7 @@
 /*
     Purpose: post-stage one helper macros for generic functions
     Author: Reece W. 
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
 */
 #pragma once
 #include "bootstrap_functions.h"

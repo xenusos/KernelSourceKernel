@@ -1,7 +1,7 @@
 /*
     Purpose:
     Author: Reece W.
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
 */
 #include <xenus.h>                            // int types, common types, etc
 #include <kernel/libx/xenus_threads.h>        // predecleration of public apis

@@ -1,7 +1,7 @@
 /*
     Purpose: Dynamic system v stub generation for object oriented components (calling convention translation with an additional parameter for arbitrary user data)
     Author: Reece W. 
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
 */  
 #include <xenus.h>
 #include "sysx_dynamic_callbacks.h"

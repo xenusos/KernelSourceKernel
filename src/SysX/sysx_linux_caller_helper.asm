@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;    Purpose:                                        ;;
 ;;    Author: Reece W.                                ;;
-;;    License: All Rights Reserved J. Reece Wilson    ;;
+;;    License: All Rights Reserved J. Reece Wilson (See License.txt)    ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;; Warning: this file is to be used with kernels that are built with no spectre mitigation

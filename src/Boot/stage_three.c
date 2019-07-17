@@ -1,7 +1,7 @@
 /*
     Purpose: Stage three enables FPU and FPU related stuff [including stack alignment]. Do note, we pass execution onto core_start.c after this. 
     Author: Reece W. 
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
 */  
 #include <xenus.h>
 #include "stage_three.h"

@@ -1,7 +1,7 @@
 /*
     Purpose: 
     Author: Reece W. 
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
 */  
 #include <xenus.h>
 #include "sysx_linux_caller.h"

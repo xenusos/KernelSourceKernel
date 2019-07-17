@@ -1,7 +1,7 @@
 /*
     Purpose: Stage two looks up all the required linux symbols and creates translation stubs
     Author: Reece W. 
-    License: All Rights Reserved J. Reece Wilson
+    License: All Rights Reserved J. Reece Wilson (See License.txt)
 */  
 #include <xenus.h>
 #include "bootstrap_functions.h"
