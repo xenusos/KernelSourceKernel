@@ -142,7 +142,7 @@ error_t pe_loader_preload_init(const void * buffer, size_t length, const char * 
     element->not_loaded.buffer = saved_pe;
     element->not_loaded.length = length;
 
-    memcpy(element->name, name, mod_len);
+    memcpy(element->name, name, mod_len + 1);
 
     memcpy(saved_pe, buffer, length);
 
@@ -285,9 +285,8 @@ pe_handle_h pe_loader_find_module(const char * name)
 
     for (linked_list_entry_p entry = module_list->bottom; entry; entry = entry->next)
     {
-        module_p mod;
-        mod = (module_p)entry->data;
-        
+        module_p mod = (module_p)entry->data;
+
         if (strcmp(mod->name, name) == 0)
             return mod;
     }

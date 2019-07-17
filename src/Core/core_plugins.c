@@ -346,15 +346,15 @@ static error_t _plugins_init_iat(module_ctx_p mod_data, size_t * o_resolved, siz
 
         if (!mod_found)
         {
-            printf("ERROR: Attempted to patch bad IAT. Reference to non-existent symbol in non-existent module. %s was not found in %s \n", entry->symbol, entry->module);
+            printf("ERROR: Attempted to patch bad IAT. Reference to non-existent symbol in non-existent module. %s was not found in %s (error: 0x%zx)\n", entry->symbol, entry->module, entry->error);
             mod_data->has_hard_error = true;
             mod_data->hard_error = XENUS_ERROR_PLUGIN_BAD_IAT;
         }
     }
 
     *o_resolved        = resolved;
-    *o_unresolved    = unresolved;
-    *o_percent        = (MAX(1, iat_state.entries_appended) / MAX(1, (iat_state.entries_appended - bad_unresolved))) * 100;
+    *o_unresolved      = unresolved;
+    *o_percent         = (MAX(1, iat_state.entries_appended) / MAX(1, (iat_state.entries_appended - bad_unresolved))) * 100;
 
     free(iat_state.list);
     return err;
