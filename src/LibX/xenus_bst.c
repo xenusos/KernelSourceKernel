@@ -154,7 +154,7 @@ XENUS_EXPORT error_t bst_iterator(
     return XENUS_OKAY;
 }
 
-static void bst_destory_node(node_p node)
+static void bst_destroy_node(node_p node)
 {
     if (node->cb)
         node->cb(node->hash, node->buffer);
@@ -189,13 +189,13 @@ static node_p bst_deallocate_ex(node_p node, uint64_t hash)
     if (!node->before)
     {
         successor = node->next;
-        bst_destory_node(node);
+        bst_destroy_node(node);
         return successor;
     }
     else if (!node->next)
     {
         successor = node->before;
-        bst_destory_node(node);
+        bst_destroy_node(node);
         return successor;
     }
 
@@ -228,7 +228,7 @@ static error_t bst_deleteall(node_p node)
     bst_deleteall(node->before);
     bst_deleteall(node->next);
 
-    bst_destory_node(node);
+    bst_destroy_node(node);
 
     return XENUS_OKAY;
 }
@@ -239,7 +239,7 @@ XENUS_EXPORT error_t bst_deallocate_search(bst_p chain, uint64_t hash)
     return XENUS_OKAY;
 }
 
-XENUS_EXPORT error_t bst_destory(bst_p chain)
+XENUS_EXPORT error_t bst_destroy(bst_p chain)
 {
     error_t err;
     

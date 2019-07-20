@@ -37,7 +37,7 @@ static mutex_k hack_mutex = 0;
 static l_int thread_callback(thread_data_p data);
 static void XENUS_MS_ABI trap_kt_thread_attention_callback(uint8_t id, pt_regs_p registers);
 static void XENUS_MS_ABI trap_kp_thread_attention_callback(uint8_t id, pt_regs_p registers);
-static void XENUS_MS_ABI thread_destory(long);
+static void XENUS_MS_ABI thread_destroy(long);
 static size_t XENUS_MS_ABI syscall_kp_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t echo);
 static size_t XENUS_MS_ABI syscall_kt_attention_callback(uint8_t id, size_t arg_alpha, size_t arg_bravo, size_t arg_charlie, size_t arg_delta, size_t echo);
 
@@ -268,8 +268,8 @@ XENUS_EXPORT void threading_set_process_syscall_handler(xenus_sys_cb_t handler)
 
 XENUS_EXPORT void thread_enable_cleanup()
 {
-    tls()->kern_thread_exit = thread_destory;
-    bad_practice_get_leader_tls()->kern_thread_exit = thread_destory;
+    tls()->kern_thread_exit = thread_destroy;
+    bad_practice_get_leader_tls()->kern_thread_exit = thread_destroy;
 }
 
 XENUS_EXPORT void thread_add_on_cpu_cb(thread_enter_cpu_p callback)
@@ -403,7 +403,7 @@ static void thread_hack_ntfy(long exit)
     }
 }
 
-static void thread_destory_aligned(long exit)
+static void thread_destroy_aligned(long exit)
 {
     bool mng_fpu;
     thread_storage_data_p tls_ = tls();
@@ -428,9 +428,9 @@ static void thread_destory_aligned(long exit)
         thread_fpu_unlock();
 }
 
-static void XENUS_MS_ABI thread_destory(long exit)
+static void XENUS_MS_ABI thread_destroy(long exit)
 {
-    stack_realigner((size_t(*)(size_t))thread_destory_aligned, (size_t)exit);
+    stack_realigner((size_t(*)(size_t))thread_destroy_aligned, (size_t)exit);
 }
 
 static size_t thread_on_cpu_unaligned(size_t somewhat_safer)

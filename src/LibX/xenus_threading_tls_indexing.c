@@ -37,7 +37,7 @@ XENUS_SYM error_t thread_indexing_create(uint_t max_threads, thread_index_counte
 
     if (!(head))
     {
-        dyn_list_destory(list);
+        dyn_list_destroy(list);
         mutex_destroy(mutex);
         return XENUS_ERROR_TLS_FAILED_TO_CREATE_LIST;
     }
@@ -51,14 +51,14 @@ XENUS_SYM error_t thread_indexing_create(uint_t max_threads, thread_index_counte
     return XENUS_OKAY;
 }
 
-XENUS_SYM error_t thread_indexing_destory(thread_index_counter_p tic)
+XENUS_SYM error_t thread_indexing_destroy(thread_index_counter_p tic)
 {
     if (!tic)
         return XENUS_ERROR_ILLEGAL_BAD_ARGUMENT;
 
     if (tic->list)
-        if (ERROR(dyn_list_destory(tic->list)))
-            return XENUS_ERROR_TLS_FAILED_TO_DESTORY;
+        if (ERROR(dyn_list_destroy(tic->list)))
+            return XENUS_ERROR_TLS_FAILED_TO_destroy;
 
     if (tic->mutex)
         mutex_destroy(tic->mutex);

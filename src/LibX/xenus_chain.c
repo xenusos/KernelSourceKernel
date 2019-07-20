@@ -180,7 +180,7 @@ XENUS_SYM error_t chain_deallocate_search(chain_p chain, uint64_t hash)
     return _chain_deallocate_ex(chain, false, hash);
 }
 
-XENUS_SYM error_t chain_destory(chain_p chain)
+XENUS_SYM error_t chain_destroy(chain_p chain)
 {
     error_t err;
     if (ERROR(err = _chain_deallocate_ex(chain, true, 0)))

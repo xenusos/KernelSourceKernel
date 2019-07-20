@@ -223,7 +223,7 @@ XENUS_EXPORT error_t dyn_list_remove(dyn_list_head_p head, size_t index)
     return dyn_list_slice(head, index, 1);
 }
 
-XENUS_EXPORT error_t dyn_list_destory(dyn_list_head_p head)
+XENUS_EXPORT error_t dyn_list_destroy(dyn_list_head_p head)
 {
     CHK_LIST;
     

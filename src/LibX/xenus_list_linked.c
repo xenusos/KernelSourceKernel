@@ -87,7 +87,7 @@ XENUS_EXPORT linked_list_head_p linked_list_create()
     return head;
 }
 
-XENUS_EXPORT error_t linked_list_destory(linked_list_head_p head)
+XENUS_EXPORT error_t linked_list_destroy(linked_list_head_p head)
 {
     linked_list_entry_p bottom;
 

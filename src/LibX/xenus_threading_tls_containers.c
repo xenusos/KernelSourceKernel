@@ -90,7 +90,7 @@ error_t _thread_tls_cleanup(uint64_t type)
         return XENUS_ERROR_CONTAINER_NOT_FOUND;
     *pcontainer = NULL;
 
-    return bst_destory(container);
+    return bst_destroy(container);
 }
 
 error_t _thread_tls_cleanup_all()
