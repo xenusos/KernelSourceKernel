@@ -346,7 +346,7 @@ static error_t _plugins_init_iat(module_ctx_p mod_data, size_t * o_resolved, siz
 
         if (!mod_found)
         {
-            printf("ERROR: Attempted to patch bad IAT. Reference to non-existent symbol in non-existent module. %s was not found in %s (error: 0x%zx)\n", entry->symbol, entry->module, entry->error);
+            printf("ERROR: Attempted to patch bad IAT. Reference to non-existent symbol in non-existent module. %s was not found in %s (error: " PRINTF_ERROR ")\n", entry->symbol, entry->module, entry->error);
             mod_data->has_hard_error = true;
             mod_data->hard_error = XENUS_ERROR_PLUGIN_BAD_IAT;
         }
@@ -492,9 +492,10 @@ static void _plugins_init_pl_init(linked_list_head_p list)
         module_ctx_p mod_data;
         mod_data = (module_ctx_p)item->data;
 
-        if (ERROR(err = _plugins_exec_init(mod_data)))
+        err = _plugins_exec_init(mod_data);
+        if (ERROR(err))
         {
-            printf(" %-15s, failed to init %zx\n", mod_data->name, err);
+            printf(" %-15s, failed to init " PRINTF_ERROR "\n", mod_data->name, err);
         }
         else
         {
@@ -518,7 +519,7 @@ static void _plugins_init_pl_start(linked_list_head_p list)
         err = _plugins_exec_start(mod_data);
         if (ERROR(err))
         {
-            printf(" %-15s, failed to start %zx\n", mod_data->name, err);
+            printf(" %-15s, failed to start " PRINTF_ERROR "\n", mod_data->name, err);
         }
     }
 }

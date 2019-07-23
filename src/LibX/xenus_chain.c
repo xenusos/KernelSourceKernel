@@ -35,7 +35,8 @@ XENUS_SYM error_t chain_allocate(chain_p * chain)
 {
     chain_p alloc;
 
-    if (!(alloc = (chain_p)zalloc(sizeof(chain_t))))
+    alloc = (chain_p)zalloc(sizeof(chain_t));
+    if (!(alloc))
         return XENUS_ERROR_OUT_OF_MEMORY;
 
     *chain = alloc;
