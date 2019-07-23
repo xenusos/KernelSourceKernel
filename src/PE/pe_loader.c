@@ -448,8 +448,8 @@ error_t pe_loader_alias(const char * target, const char * dest)
 
     redir = (mod_redir_p) entry->data;
 
-    memcpy(redir->from, target, len_target);
-    memcpy(redir->to, dest, len_dest);
+    memcpy(redir->from, target, len_target + C_NULL_CHAR);
+    memcpy(redir->to, dest, len_dest + C_NULL_CHAR);
     return XENUS_OKAY;
 }
 
@@ -487,7 +487,7 @@ error_t pe_loader_postload_iat_add_symbol_byname(pe_handle_h handle, const char 
 
     redir = (sym_redir_p)entry->data;
 
-    memcpy(redir->symbol, symbol, len);
+    memcpy(redir->symbol, symbol, len + C_NULL_CHAR);
 
     redir->data = replacement;
     return XENUS_OKAY;
