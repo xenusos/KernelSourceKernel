@@ -75,9 +75,9 @@ static error_t xenus_load_module(const char * friendly_name, const char * mod, c
     err = pe_loader_load(buf, fs, mod, &pe_hd);
     if (ERROR(err))
     {
-        printf("%s failed to load: %i \n", 
+        printf("%s failed to load: " PRINTF_ERROR "  \n", 
             friendly_name,
-            (int) err);
+            err);
         goto err_s;
     }
 
