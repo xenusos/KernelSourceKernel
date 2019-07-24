@@ -177,7 +177,8 @@ static error_t plugins_iterative_load(linked_list_head_p list, const char * mod,
     memcpy(plugin_module->name,   name, MIN(strlen(name), sizeof(plugin_module->name) - 1));
     memcpy(plugin_module->path,   path, MIN(strlen(path), sizeof(plugin_module->path) - 1));
 
-    if (ERROR(ret = xenus_load_module(name, mod, path, &pe_module)))
+    ret = xenus_load_module(name, mod, path, &pe_module);
+    if (ERROR(ret))
     {
         printf("Couldn't load module: %s. This could be bad if such module isn't a soft-dependency! %lli\n ", name, (int64_t)ret);
 
@@ -189,7 +190,8 @@ static error_t plugins_iterative_load(linked_list_head_p list, const char * mod,
 
     plugin_module->handle = pe_module;
 
-    if (ERROR(ret = _plugins_load_call_ep(pe_module, entrypoint_data)))
+    ret = _plugins_load_call_ep(pe_module, entrypoint_data);
+    if (ERROR(ret))
         return ret;
 
     if (entrypoint_data->size != sizeof(xenus_entrypoint_ctx_t))
@@ -554,7 +556,8 @@ XENUS_SYM error_t plugins_load(const char * name, const char * mod, const char *
 
     pe_loader_enter_critical();
 
-    if (ERROR(err = plugins_iterative_load(plugins, mod, name, path, false, root_pe_handle, root_plugin_handle)))
+    err = plugins_iterative_load(plugins, mod, name, path, false, root_pe_handle, root_plugin_handle);
+    if (ERROR(err))
     {
         pe_loader_leave_critical();
         return err;

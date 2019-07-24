@@ -44,6 +44,7 @@ static error_t loader_load_from_csv(const char * str, uint_t length)
     while (true)
     {
         error_t err;
+        error_t err2;
 
         err = csv_process_buffer(str, length, &counter, name, sizeof(name), NULL);
         if ((err == XENUS_ERROR_CSV_EOS) || (err == XENUS_STATUS_CSV_READ_ALL))
@@ -57,7 +58,9 @@ static error_t loader_load_from_csv(const char * str, uint_t length)
         if (err == XENUS_ERROR_CSV_EOS)
             break;
 
-        loader_append(name, module, path);
+        err2 = loader_append(name, module, path);
+        if (ERROR(err2))
+            return err2;
 
         if (err == XENUS_STATUS_CSV_READ_ALL)
             break;
@@ -87,10 +90,10 @@ static error_t loader_load_from_file()
     file_read(hd, 0, buf, fs);
     file_close(hd);
 
-    loader_load_from_csv((const char *)buf, fs);
+    err = loader_load_from_csv((const char *)buf, fs);
     
     free(buf);
-    return XENUS_OKAY;
+    return err;
 }
 
 void xenus_launch_plugins()
@@ -99,11 +102,11 @@ void xenus_launch_plugins()
 
     err = loader_init();
     if (ERROR(err)) 
-        panicf("_loader_init failed with %lli", err);
+        panicf("_loader_init failed with " PRINTF_ERROR, err);
 
     err = loader_load_from_file();
     if (ERROR(err))
-        panicf("_loader_load_from_file failed with %lli", err);
+        panicf("_loader_load_from_file failed with " PRINTF_ERROR, err);
 
     err = loader_transfer();
     if (ERROR(err))
