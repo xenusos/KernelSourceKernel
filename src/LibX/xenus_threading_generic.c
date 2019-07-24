@@ -78,35 +78,6 @@ void sync_cache()
     __faststorefence();
 }
 
-error_t threading_ntfy_singleshot_exit(uint32_t pid, thread_exit_hack_t cb)
-{
-    error_t er;
-    thread_exit_hack_t * ptr;
-
-    if (!hack_mutex)
-    {
-        hack_mutex = mutex_init();
-        ASSERT(hack_mutex, "couldn't allocate mutex");
-
-        er = chain_allocate(&hack_exit_ntfy);
-        ASSERT(NO_ERROR(er), "couldn't allocate chain type");
-    }
-
-    er = XENUS_OKAY;
-
-    mutex_lock(hack_mutex);
-
-    er = chain_allocate_link(hack_exit_ntfy, pid, sizeof(thread_exit_hack_t *), NULL, NULL, (void**)&ptr);
-    if (ERROR(er))
-        goto exit;
-
-    *ptr = cb;
-
-exit:
-    mutex_unlock(hack_mutex);
-    return er;
-}
-
 XENUS_EXPORT void thread_preempt_lock()
 {
     preempt_disable();
@@ -376,33 +347,6 @@ static void XENUS_MS_ABI trap_kp_thread_attention_callback(uint8_t id, pt_regs_p
     trap_handler(id, registers, false);
 }
 
-static void thread_hack_ntfy(long exit)
-{
-    error_t err;
-    link_p link;
-    thread_exit_hack_t * ptr;
-    thread_exit_hack_t cb;
-
-    if (!hack_mutex)
-        return;
-
-    mutex_lock(hack_mutex);
-
-    err = chain_get(hack_exit_ntfy, thread_geti(), &link, (void **)&ptr);
-    if (NO_ERROR(err))
-    {
-        cb = *ptr;
-        chain_deallocate_handle(link);
-        mutex_unlock(hack_mutex);
-
-        cb(exit);
-    }
-    else
-    {
-        mutex_unlock(hack_mutex);
-    }
-}
-
 static void thread_destroy_aligned(long exit)
 {
     bool mng_fpu;
@@ -413,15 +357,14 @@ static void thread_destroy_aligned(long exit)
     if (mng_fpu)
         thread_fpu_lock();
 
-    sync_cache();
 
-    thread_hack_ntfy(exit);
+    sync_cache();
 
     for (int i = 0; i < XENUS_PUB_THREAD_EXIT_CBS; i++)
         if (tls_->pub_thread_exit[i])
             tls_->pub_thread_exit[i](exit);
- 
-
+    
+    
     _thread_tls_cleanup_all();
 
     if (mng_fpu)
